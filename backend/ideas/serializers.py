@@ -71,7 +71,7 @@ class IdeaDetailSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
 
-    def get_comments_count(self, obj):
+    def get_comments_count(self, obj) -> int:
         return obj.comments.count()
 
 
