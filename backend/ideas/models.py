@@ -75,7 +75,12 @@ class Idea(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(self.title)
+            # slugify з allow_unicode для кирилиці
+            base_slug = slugify(self.title, allow_unicode=True)
+            if not base_slug:
+                # Якщо slug порожній - використовуємо id або timestamp
+                import time
+                base_slug = f"idea-{int(time.time())}"
             slug = base_slug
             counter = 1
             while Idea.objects.filter(slug=slug).exists():
