@@ -18,6 +18,9 @@ export const usersAPI = {
 
   // Отримати підписки
   getFollowing: (id) => api.get(`/users/${id}/following/`),
+
+  // Оновити профіль поточного користувача
+  updateProfile: (data) => api.patch('/users/me/', data),
 };
 
 export default usersAPI;

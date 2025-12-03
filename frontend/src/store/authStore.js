@@ -66,6 +66,11 @@ const useAuthStore = create((set, get) => ({
     set({ user: null, isAuthenticated: false });
   },
 
+  // Оновити дані користувача в сторі
+  updateUser: (userData) => {
+    set({ user: userData });
+  },
+
   // Оновити профіль
   updateProfile: async (data) => {
     try {
