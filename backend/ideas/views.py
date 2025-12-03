@@ -64,9 +64,11 @@ class IdeaViewSet(viewsets.ModelViewSet):
         """Різні права для різних дій"""
         if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
-        elif self.action == 'create':
+        elif self.action in ['create', 'like', 'comments']:
+            # Створення ідеї, лайки та коментарі - тільки авторизовані
             return [permissions.IsAuthenticated()]
         else:
+            # Редагування/видалення - тільки автор
             return [permissions.IsAuthenticated(), IsAuthorOrReadOnly()]
 
     def get_serializer_class(self):
