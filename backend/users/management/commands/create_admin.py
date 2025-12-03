@@ -18,8 +18,8 @@ class Command(BaseCommand):
             ))
             return
 
-        if User.objects.filter(email=email).exists():
-            self.stdout.write(self.style.WARNING(f'Admin {email} already exists'))
+        if User.objects.filter(email=email).exists() or User.objects.filter(username='admin').exists():
+            self.stdout.write(self.style.WARNING(f'Admin already exists, skipping'))
             return
 
         User.objects.create_superuser(
