@@ -144,6 +144,8 @@ function RegisterPage() {
                   <Form.Label>Рівень освіти</Form.Label>
                   <Form.Select name="education_level" value={formData.education_level} onChange={handleChange}>
                     <option value="">Оберіть...</option>
+                    <option value="incomplete_secondary">Неповна середня освіта</option>
+                    <option value="secondary">Середня освіта</option>
                     <option value="bachelor">Бакалавр</option>
                     <option value="master">Магістр</option>
                     <option value="phd">Аспірант / PhD</option>

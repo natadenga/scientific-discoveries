@@ -3,13 +3,18 @@ from django.db import models
 
 
 class EducationLevel(models.TextChoices):
-    HIGHER = 'higher', 'Вища освіта'
-    VOCATIONAL = 'vocational', 'Фахова передвища освіта'
+    INCOMPLETE_SECONDARY = 'incomplete_secondary', 'Неповна середня освіта'
+    SECONDARY = 'secondary', 'Середня освіта'
+    BACHELOR = 'bachelor', 'Бакалавр'
+    MASTER = 'master', 'Магістр'
+    PHD = 'phd', 'Аспірант / PhD'
+    DOCTOR = 'doctor', 'Доктор наук'
 
 
 class UserRole(models.TextChoices):
     STUDENT = 'student', 'Студент'
     TEACHER = 'teacher', 'Викладач'
+    RESEARCHER = 'researcher', 'Дослідник'
 
 
 class User(AbstractUser):
@@ -18,10 +23,10 @@ class User(AbstractUser):
     role = models.CharField('Роль', max_length=20, choices=UserRole.choices)
     institution = models.CharField('Заклад освіти', max_length=255)
     education_level = models.CharField(
-        'Рівень освіти', 
-        max_length=20, 
+        'Рівень освіти',
+        max_length=30,
         choices=EducationLevel.choices,
-        default=EducationLevel.HIGHER
+        default=EducationLevel.BACHELOR
     )
     
     # Профіль
