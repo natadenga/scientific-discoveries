@@ -87,9 +87,10 @@ class IdeaCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Idea
         fields = [
-            'title', 'description', 'scientific_field_id',
+            'id', 'slug', 'title', 'description', 'scientific_field_id',
             'keywords', 'status', 'is_public', 'is_open_for_collaboration'
         ]
+        read_only_fields = ['id', 'slug']
 
     def create(self, validated_data):
         """Автоматично додаємо автора при створенні"""

@@ -2,6 +2,7 @@ from rest_framework import viewsets, status, permissions, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Q
 
 from .models import Idea, ScientificField, Comment
 from .serializers import (
@@ -87,7 +88,7 @@ class IdeaViewSet(viewsets.ModelViewSet):
         # Якщо користувач авторизований - показуємо і його приватні ідеї
         if self.request.user.is_authenticated:
             queryset = Idea.objects.filter(
-                models.Q(is_public=True) | models.Q(author=self.request.user)
+                Q(is_public=True) | Q(author=self.request.user)
             )
 
         return queryset.select_related('author', 'scientific_field')
@@ -158,7 +159,3 @@ class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
     permission_classes = [permissions.IsAuthenticated, IsAuthorOrReadOnly]
     http_method_names = ['delete']  # Тільки видалення
-
-
-# Потрібен імпорт для Q-запитів
-from django.db import models
