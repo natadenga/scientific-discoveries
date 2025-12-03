@@ -14,6 +14,7 @@ import RegisterPage from './pages/auth/RegisterPage';
 import IdeasListPage from './pages/ideas/IdeasListPage';
 import IdeaDetailPage from './pages/ideas/IdeaDetailPage';
 import IdeaCreatePage from './pages/ideas/IdeaCreatePage';
+import IdeaEditPage from './pages/ideas/IdeaEditPage';
 import UsersListPage from './pages/users/UsersListPage';
 import UserDetailPage from './pages/users/UserDetailPage';
 import ProfilePage from './pages/profile/ProfilePage';
@@ -38,6 +39,14 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/ideas" element={<IdeasListPage />} />
         <Route path="/ideas/:slug" element={<IdeaDetailPage />} />
+        <Route
+          path="/ideas/:slug/edit"
+          element={
+            <ProtectedRoute>
+              <IdeaEditPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/ideas/create"
           element={
