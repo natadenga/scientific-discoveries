@@ -7,6 +7,9 @@ export const usersAPI = {
   // Отримати користувача за id
   getById: (id) => api.get(`/users/${id}/`),
 
+  // Отримати ідеї користувача
+  getIdeas: (id) => api.get(`/users/${id}/ideas/`),
+
   // Підписатися / відписатися
   follow: (id) => api.post(`/users/${id}/follow/`),
 

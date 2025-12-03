@@ -15,6 +15,7 @@ import IdeasListPage from './pages/ideas/IdeasListPage';
 import IdeaDetailPage from './pages/ideas/IdeaDetailPage';
 import IdeaCreatePage from './pages/ideas/IdeaCreatePage';
 import UsersListPage from './pages/users/UsersListPage';
+import UserDetailPage from './pages/users/UserDetailPage';
 
 function App() {
   const { initialize, isLoading } = useAuthStore();
@@ -45,6 +46,7 @@ function App() {
           }
         />
         <Route path="/users" element={<UsersListPage />} />
+        <Route path="/users/:id" element={<UserDetailPage />} />
       </Routes>
     </BrowserRouter>
   );
