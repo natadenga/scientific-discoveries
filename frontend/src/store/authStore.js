@@ -13,7 +13,7 @@ const useAuthStore = create((set, get) => ({
       try {
         const response = await authAPI.getMe();
         set({ user: response.data, isAuthenticated: true, isLoading: false });
-      } catch (error) {
+      } catch {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         set({ user: null, isAuthenticated: false, isLoading: false });
