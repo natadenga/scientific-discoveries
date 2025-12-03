@@ -82,6 +82,18 @@ function UserDetailPage() {
     return <Badge bg={variants[role] || 'secondary'}>{labels[role] || role}</Badge>;
   };
 
+  const getEducationLabel = (level) => {
+    const levels = {
+      incomplete_secondary: 'Неповна середня освіта',
+      secondary: 'Середня освіта',
+      bachelor: 'Бакалавр',
+      master: 'Магістр',
+      phd: 'Аспірант / PhD',
+      doctor: 'Доктор наук',
+    };
+    return levels[level] || level;
+  };
+
   if (loading) return <Loading />;
   if (error) return <Container className="py-4"><Alert variant="danger">{error}</Alert></Container>;
   if (!user) return null;
@@ -162,6 +174,46 @@ function UserDetailPage() {
               </Card.Body>
             </Card>
           )}
+
+          {user.publications && (
+            <Card className="mb-4">
+              <Card.Header>Публікації</Card.Header>
+              <Card.Body>
+                <p className="mb-0" style={{ whiteSpace: 'pre-wrap' }}>{user.publications}</p>
+              </Card.Body>
+            </Card>
+          )}
+
+          {/* Додаткова інформація */}
+          <Card className="mb-4">
+            <Card.Header>Інформація</Card.Header>
+            <Card.Body>
+              {user.education_level && (
+                <p className="mb-2">
+                  <strong>Освіта:</strong> {getEducationLabel(user.education_level)}
+                </p>
+              )}
+              {user.orcid && (
+                <p className="mb-2">
+                  <strong>ORCID:</strong>{' '}
+                  <a href={`https://orcid.org/${user.orcid}`} target="_blank" rel="noopener noreferrer">
+                    {user.orcid}
+                  </a>
+                </p>
+              )}
+              {user.google_scholar && (
+                <p className="mb-0">
+                  <strong>Google Scholar:</strong>{' '}
+                  <a href={user.google_scholar} target="_blank" rel="noopener noreferrer">
+                    Профіль
+                  </a>
+                </p>
+              )}
+              {!user.education_level && !user.orcid && !user.google_scholar && (
+                <p className="text-muted mb-0">Додаткова інформація не вказана</p>
+              )}
+            </Card.Body>
+          </Card>
         </Col>
 
         <Col lg={8}>

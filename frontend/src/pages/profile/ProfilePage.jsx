@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Form, Button, Alert, Image, Tab, Tabs } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, Alert, Image, Tab, Tabs, Modal, ListGroup } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
 import { usersAPI } from '../../api/users';
@@ -19,6 +19,10 @@ function ProfilePage() {
     google_scholar: '',
   });
   const [myIdeas, setMyIdeas] = useState([]);
+  const [followers, setFollowers] = useState([]);
+  const [following, setFollowing] = useState([]);
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -47,6 +51,23 @@ function ProfilePage() {
     };
     fetchMyIdeas();
   }, []);
+
+  useEffect(() => {
+    const fetchFollowData = async () => {
+      if (!user?.id) return;
+      try {
+        const [followersRes, followingRes] = await Promise.all([
+          usersAPI.getFollowers(user.id),
+          usersAPI.getFollowing(user.id),
+        ]);
+        setFollowers(followersRes.data.results || followersRes.data);
+        setFollowing(followingRes.data.results || followingRes.data);
+      } catch (err) {
+        console.error('Error fetching follow data:', err);
+      }
+    };
+    fetchFollowData();
+  }, [user?.id]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -129,8 +150,22 @@ function ProfilePage() {
               <div className="text-start">
                 <p><strong>Заклад:</strong> {user.institution || '—'}</p>
                 <p><strong>Освіта:</strong> {getEducationLabel(user.education_level)}</p>
-                <p><strong>Підписників:</strong> {user.followers_count || 0}</p>
-                <p><strong>Підписок:</strong> {user.following_count || 0}</p>
+                <p
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setShowFollowersModal(true)}
+                  className="mb-2"
+                >
+                  <strong>Підписників:</strong>{' '}
+                  <span className="text-primary">{followers.length}</span>
+                </p>
+                <p
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setShowFollowingModal(true)}
+                  className="mb-2"
+                >
+                  <strong>Підписок:</strong>{' '}
+                  <span className="text-primary">{following.length}</span>
+                </p>
                 {user.is_verified && (
                   <span className="badge bg-success">Верифікований</span>
                 )}
@@ -275,6 +310,68 @@ function ProfilePage() {
           </Tabs>
         </Col>
       </Row>
+
+      {/* Модальне вікно підписників */}
+      <Modal show={showFollowersModal} onHide={() => setShowFollowersModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Мої підписники</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {followers.length === 0 ? (
+            <p className="text-muted text-center">Поки немає підписників</p>
+          ) : (
+            <ListGroup variant="flush">
+              {followers.map((follower) => (
+                <ListGroup.Item key={follower.id} className="d-flex align-items-center">
+                  <div
+                    className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                    style={{ width: 40, height: 40 }}
+                  >
+                    {follower.username[0].toUpperCase()}
+                  </div>
+                  <Link
+                    to={`/users/${follower.id}`}
+                    onClick={() => setShowFollowersModal(false)}
+                  >
+                    {follower.username}
+                  </Link>
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          )}
+        </Modal.Body>
+      </Modal>
+
+      {/* Модальне вікно підписок */}
+      <Modal show={showFollowingModal} onHide={() => setShowFollowingModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Мої підписки</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {following.length === 0 ? (
+            <p className="text-muted text-center">Поки немає підписок</p>
+          ) : (
+            <ListGroup variant="flush">
+              {following.map((u) => (
+                <ListGroup.Item key={u.id} className="d-flex align-items-center">
+                  <div
+                    className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                    style={{ width: 40, height: 40 }}
+                  >
+                    {u.username[0].toUpperCase()}
+                  </div>
+                  <Link
+                    to={`/users/${u.id}`}
+                    onClick={() => setShowFollowingModal(false)}
+                  >
+                    {u.username}
+                  </Link>
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          )}
+        </Modal.Body>
+      </Modal>
     </Container>
   );
 }
