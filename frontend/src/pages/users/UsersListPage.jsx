@@ -97,12 +97,13 @@ function UsersListPage() {
                     <div>
                       <h5 className="mb-0">
                         <Link to={`/users/${user.id}`} className="text-decoration-none">
-                          {user.username}
+                          {user.full_name || user.username}
                         </Link>
                         {user.is_verified && (
                           <FaCheckCircle className="text-primary ms-2" title="Верифікований" />
                         )}
                       </h5>
+                      <small className="text-muted">@{user.username}</small>{' '}
                       {getRoleBadge(user.role)}
                     </div>
                   </div>

@@ -113,11 +113,12 @@ function UserDetailPage() {
                 {user.username[0].toUpperCase()}
               </div>
               <h4>
-                {user.username}
+                {user.full_name || user.username}
                 {user.is_verified && (
                   <FaCheckCircle className="text-primary ms-2" title="Верифікований" />
                 )}
               </h4>
+              <p className="text-muted mb-1">@{user.username}</p>
               {getRoleBadge(user.role)}
 
               {user.institution && (
@@ -265,7 +266,7 @@ function UserDetailPage() {
                     to={`/users/${follower.id}`}
                     onClick={() => setShowFollowersModal(false)}
                   >
-                    {follower.username}
+                    {follower.full_name || follower.username}
                   </Link>
                 </ListGroup.Item>
               ))}
@@ -284,19 +285,19 @@ function UserDetailPage() {
             <p className="text-muted text-center">Поки немає підписок</p>
           ) : (
             <ListGroup variant="flush">
-              {following.map((user) => (
-                <ListGroup.Item key={user.id} className="d-flex align-items-center">
+              {following.map((u) => (
+                <ListGroup.Item key={u.id} className="d-flex align-items-center">
                   <div
                     className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
                     style={{ width: 40, height: 40 }}
                   >
-                    {user.username[0].toUpperCase()}
+                    {u.username[0].toUpperCase()}
                   </div>
                   <Link
-                    to={`/users/${user.id}`}
+                    to={`/users/${u.id}`}
                     onClick={() => setShowFollowingModal(false)}
                   >
-                    {user.username}
+                    {u.full_name || u.username}
                   </Link>
                 </ListGroup.Item>
               ))}

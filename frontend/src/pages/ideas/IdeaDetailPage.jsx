@@ -210,7 +210,7 @@ function IdeaDetailPage() {
                     <Card.Body className="py-2">
                       <div className="d-flex justify-content-between">
                         <Link to={`/users/${c.author.id}`}>
-                          <strong>{c.author.username}</strong>
+                          <strong>{c.author.full_name || c.author.username}</strong>
                         </Link>
                         <small className="text-muted">
                           {new Date(c.created_at).toLocaleDateString('uk-UA')}
@@ -238,10 +238,10 @@ function IdeaDetailPage() {
                 </div>
                 <div>
                   <Link to={`/users/${idea.author.id}`}>
-                    <strong>{idea.author.username}</strong>
+                    <strong>{idea.author.full_name || idea.author.username}</strong>
                   </Link>
                   <br />
-                  <small className="text-muted">{idea.author.role}</small>
+                  <small className="text-muted">@{idea.author.username}</small>
                 </div>
               </div>
             </Card.Body>

@@ -12,6 +12,8 @@ function ProfilePage() {
   const [activeTab, setActiveTab] = useState('profile');
   const [formData, setFormData] = useState({
     username: '',
+    first_name: '',
+    last_name: '',
     bio: '',
     scientific_interests: '',
     publications: '',
@@ -31,6 +33,8 @@ function ProfilePage() {
     if (user) {
       setFormData({
         username: user.username || '',
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
         bio: user.bio || '',
         scientific_interests: user.scientific_interests || '',
         publications: user.publications || '',
@@ -141,7 +145,8 @@ function ProfilePage() {
                   {user.username?.charAt(0).toUpperCase()}
                 </div>
               )}
-              <h4>{user.username}</h4>
+              <h4>{user.full_name || user.username}</h4>
+              <p className="text-muted mb-1">@{user.username}</p>
               <p className="text-muted mb-2">{user.email}</p>
               <span className="badge bg-primary mb-3">{getRoleLabel(user.role)}</span>
 
@@ -183,6 +188,33 @@ function ProfilePage() {
                   {error && <Alert variant="danger">{error}</Alert>}
 
                   <Form onSubmit={handleSubmit}>
+                    <Row>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Імʼя</Form.Label>
+                          <Form.Control
+                            type="text"
+                            name="first_name"
+                            value={formData.first_name}
+                            onChange={handleChange}
+                            placeholder="Ваше імʼя"
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Прізвище</Form.Label>
+                          <Form.Control
+                            type="text"
+                            name="last_name"
+                            value={formData.last_name}
+                            onChange={handleChange}
+                            placeholder="Ваше прізвище"
+                          />
+                        </Form.Group>
+                      </Col>
+                    </Row>
+
                     <Form.Group className="mb-3">
                       <Form.Label>Імʼя користувача</Form.Label>
                       <Form.Control
@@ -333,7 +365,7 @@ function ProfilePage() {
                     to={`/users/${follower.id}`}
                     onClick={() => setShowFollowersModal(false)}
                   >
-                    {follower.username}
+                    {follower.full_name || follower.username}
                   </Link>
                 </ListGroup.Item>
               ))}
@@ -364,7 +396,7 @@ function ProfilePage() {
                     to={`/users/${u.id}`}
                     onClick={() => setShowFollowingModal(false)}
                   >
-                    {u.username}
+                    {u.full_name || u.username}
                   </Link>
                 </ListGroup.Item>
               ))}

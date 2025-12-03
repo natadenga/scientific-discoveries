@@ -8,14 +8,15 @@ class UserSerializer(serializers.ModelSerializer):
     """Серіалізатор для перегляду користувачів"""
     followers_count = serializers.SerializerMethodField()
     following_count = serializers.SerializerMethodField()
+    full_name = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
-            'id', 'email', 'username', 'role', 'institution',
-            'education_level', 'avatar', 'bio', 'scientific_interests',
-            'publications', 'orcid', 'google_scholar', 'is_verified',
-            'followers_count', 'following_count', 'created_at'
+            'id', 'email', 'username', 'first_name', 'last_name', 'full_name',
+            'role', 'institution', 'education_level', 'avatar', 'bio',
+            'scientific_interests', 'publications', 'orcid', 'google_scholar',
+            'is_verified', 'followers_count', 'following_count', 'created_at'
         ]
         read_only_fields = ['id', 'email', 'is_verified', 'created_at']
 
@@ -24,6 +25,11 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_following_count(self, obj) -> int:
         return obj.following.count()
+
+    def get_full_name(self, obj) -> str:
+        if obj.first_name or obj.last_name:
+            return f"{obj.first_name} {obj.last_name}".strip()
+        return obj.username
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -34,7 +40,8 @@ class UserCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'email', 'username', 'password', 'password_confirm',
+            'email', 'username', 'first_name', 'last_name',
+            'password', 'password_confirm',
             'role', 'institution', 'education_level'
         ]
 
@@ -63,14 +70,21 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'username', 'bio', 'scientific_interests', 'publications',
+            'username', 'first_name', 'last_name', 'bio',
+            'scientific_interests', 'publications',
             'orcid', 'google_scholar', 'avatar'
         ]
 
 
 class UserShortSerializer(serializers.ModelSerializer):
     """Короткий серіалізатор (для вкладення в інші об'єкти)"""
+    full_name = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'avatar', 'role', 'is_verified']
+        fields = ['id', 'username', 'first_name', 'last_name', 'full_name', 'avatar', 'role', 'is_verified']
+
+    def get_full_name(self, obj) -> str:
+        if obj.first_name or obj.last_name:
+            return f"{obj.first_name} {obj.last_name}".strip()
+        return obj.username

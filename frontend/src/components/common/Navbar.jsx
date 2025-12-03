@@ -33,7 +33,7 @@ function AppNavbar() {
                 </Nav.Link>
                 <Nav.Link as={Link} to="/profile">
                   <FaUser className="me-1" />
-                  {user?.username}
+                  {user?.full_name || user?.username}
                 </Nav.Link>
                 <Button variant="outline-light" size="sm" onClick={handleLogout}>
                   <FaSignOutAlt className="me-1" />

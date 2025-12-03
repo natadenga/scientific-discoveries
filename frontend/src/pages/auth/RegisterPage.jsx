@@ -9,6 +9,8 @@ function RegisterPage() {
   const [formData, setFormData] = useState({
     email: '',
     username: '',
+    first_name: '',
+    last_name: '',
     password: '',
     password_confirm: '',
     role: 'student',
@@ -68,6 +70,35 @@ function RegisterPage() {
                 <Row>
                   <Col md={6}>
                     <Form.Group className="mb-3">
+                      <Form.Label>Імʼя *</Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="first_name"
+                        value={formData.first_name}
+                        onChange={handleChange}
+                        placeholder="Ваше імʼя"
+                        required
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Прізвище *</Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="last_name"
+                        value={formData.last_name}
+                        onChange={handleChange}
+                        placeholder="Ваше прізвище"
+                        required
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+
+                <Row>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
                       <Form.Label>Email *</Form.Label>
                       <Form.Control
                         type="email"
@@ -86,6 +117,7 @@ function RegisterPage() {
                         name="username"
                         value={formData.username}
                         onChange={handleChange}
+                        placeholder="Унікальний нікнейм"
                         required
                       />
                     </Form.Group>

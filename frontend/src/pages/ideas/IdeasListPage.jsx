@@ -156,7 +156,7 @@ function IdeasListPage() {
                   )}
                   <div className="d-flex align-items-center text-muted small">
                     <Link to={`/users/${idea.author.id}`} className="text-decoration-none me-3">
-                      {idea.author.username}
+                      {idea.author.full_name || idea.author.username}
                     </Link>
                     <span className="me-3">
                       <FaEye className="me-1" />
