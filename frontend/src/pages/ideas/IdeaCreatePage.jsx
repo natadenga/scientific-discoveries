@@ -25,7 +25,7 @@ function IdeaCreatePage() {
     const fetchFields = async () => {
       try {
         const response = await fieldsAPI.getList();
-        setFields(response.data);
+        setFields(response.data.results || response.data);
       } catch (err) {
         console.error('Error loading fields:', err);
       }

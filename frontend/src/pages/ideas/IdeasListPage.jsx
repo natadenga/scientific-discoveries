@@ -20,7 +20,7 @@ function IdeasListPage() {
     const fetchFields = async () => {
       try {
         const response = await fieldsAPI.getList();
-        setFields(response.data);
+        setFields(response.data.results || response.data);
       } catch (error) {
         console.error('Error loading fields:', error);
       }
@@ -39,7 +39,7 @@ function IdeasListPage() {
         if (status) params.status = status;
 
         const response = await ideasAPI.getList(params);
-        setIdeas(response.data);
+        setIdeas(response.data.results || response.data);
       } catch (error) {
         console.error('Error loading ideas:', error);
       }

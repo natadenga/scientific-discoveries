@@ -20,7 +20,7 @@ function UsersListPage() {
         if (search) params.search = search;
 
         const response = await usersAPI.getList(params);
-        setUsers(response.data);
+        setUsers(response.data.results || response.data);
       } catch (err) {
         console.error('Error loading users:', err);
       }
