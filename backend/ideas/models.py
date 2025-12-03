@@ -32,7 +32,7 @@ class IdeaStatus(models.TextChoices):
 class Idea(models.Model):
     """Наукова ідея"""
     title = models.CharField('Назва', max_length=255)
-    slug = models.SlugField('Slug', unique=True, blank=True)
+    slug = models.SlugField('Slug', max_length=100, unique=True, blank=True)
     description = models.TextField('Опис')
     
     author = models.ForeignKey(
@@ -75,16 +75,16 @@ class Idea(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.slug:
-            # slugify з allow_unicode для кирилиці
-            base_slug = slugify(self.title, allow_unicode=True)
+            # slugify з allow_unicode для кирилиці, обмежуємо до 80 символів
+            base_slug = slugify(self.title, allow_unicode=True)[:80]
             if not base_slug:
-                # Якщо slug порожній - використовуємо id або timestamp
+                # Якщо slug порожній - використовуємо timestamp
                 import time
                 base_slug = f"idea-{int(time.time())}"
             slug = base_slug
             counter = 1
             while Idea.objects.filter(slug=slug).exists():
-                slug = f"{base_slug}-{counter}"
+                slug = f"{base_slug[:70]}-{counter}"  # залишаємо місце для лічильника
                 counter += 1
             self.slug = slug
         super().save(*args, **kwargs)
