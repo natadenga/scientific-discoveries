@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Navbar, Nav, Container, Button } from 'react-bootstrap';
 import { FaFlask, FaUser, FaSignOutAlt } from 'react-icons/fa';
 import useAuthStore from '../../store/authStore';
@@ -6,6 +6,8 @@ import useAuthStore from '../../store/authStore';
 function AppNavbar() {
   const { isAuthenticated, user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const currentType = searchParams.get('type');
 
   const handleLogout = () => {
     logout();
@@ -31,7 +33,7 @@ function AppNavbar() {
           <Nav>
             {isAuthenticated ? (
               <>
-                <Nav.Link as={Link} to="/contents/create">
+                <Nav.Link as={Link} to={currentType ? `/contents/create?type=${currentType}` : '/contents/create'}>
                   + Додати
                 </Nav.Link>
                 <Nav.Link as={Link} to="/profile">

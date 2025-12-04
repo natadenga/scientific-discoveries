@@ -96,7 +96,7 @@ function ContentsListPage() {
     <Container className="py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1>{contentType ? getContentTypeLabel(contentType) : 'Науковий контент'}</h1>
-        <Button as={Link} to="/contents/create" variant="primary">
+        <Button as={Link} to={contentType ? `/contents/create?type=${contentType}` : '/contents/create'} variant="primary">
           + Додати
         </Button>
       </div>
