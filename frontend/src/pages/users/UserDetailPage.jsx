@@ -7,6 +7,25 @@ import useAuthStore from '../../store/authStore';
 import Loading from '../../components/common/Loading';
 import useTitle from '../../hooks/useTitle';
 
+// Функція для конвертації URL в клікабельні посилання
+const renderTextWithLinks = (text) => {
+  if (!text) return null;
+
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+
+  return parts.map((part, index) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a key={index} href={part} target="_blank" rel="noopener noreferrer">
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
+};
+
 function UserDetailPage() {
   const { id } = useParams();
   const { user: currentUser, isAuthenticated } = useAuthStore();
@@ -183,7 +202,7 @@ function UserDetailPage() {
             <Card className="mb-4">
               <Card.Header>Публікації</Card.Header>
               <Card.Body>
-                <p className="mb-0" style={{ whiteSpace: 'pre-wrap' }}>{user.publications}</p>
+                <p className="mb-0" style={{ whiteSpace: 'pre-wrap' }}>{renderTextWithLinks(user.publications)}</p>
               </Card.Body>
             </Card>
           )}
