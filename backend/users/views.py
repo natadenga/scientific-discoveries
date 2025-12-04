@@ -27,6 +27,10 @@ class UserViewSet(viewsets.ModelViewSet):
     """
     queryset = User.objects.filter(is_staff=False)  # Приховуємо адмінів
     serializer_class = UserSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['first_name', 'last_name', 'username', 'email']
+    ordering_fields = ['created_at', 'first_name', 'last_name']
+    ordering = ['-created_at']
 
     def get_permissions(self):
         """Різні права доступу для різних дій"""
@@ -138,9 +142,21 @@ class InstitutionViewSet(viewsets.ModelViewSet):
     GET /api/institutions/ - список закладів (з пошуком)
     POST /api/institutions/ - додати новий заклад
     """
-    queryset = Institution.objects.all()
     serializer_class = InstitutionSerializer
     permission_classes = [permissions.AllowAny]
     filter_backends = [filters.SearchFilter]
     search_fields = ['name']
     http_method_names = ['get', 'post']
+
+    def get_queryset(self):
+        from django.db.models import Count
+
+        search = self.request.query_params.get('search', '')
+        if search:
+            queryset = Institution.objects.filter(name__icontains=search)
+        else:
+            queryset = Institution.objects.annotate(
+                users_count=Count('users')
+                ).order_by('-users_count', 'name')
+
+        return queryset[:10]

@@ -58,24 +58,34 @@ function ProfilePage() {
     }
   }, [user]);
 
-  // Пошук закладів освіти
-  useEffect(() => {
-    const searchInstitutions = async () => {
-      if (formData.institution.length < 2) {
-        setInstitutions([]);
-        return;
-      }
-      try {
-        const response = await institutionsAPI.search(formData.institution);
-        setInstitutions(response.data.results || response.data || []);
-      } catch {
-        setInstitutions([]);
-      }
-    };
+  // Завантаження закладів освіти
+  const loadInstitutions = async (query = '') => {
+    try {
+      const response = await institutionsAPI.search(query);
+      setInstitutions(response.data.results || response.data || []);
+    } catch {
+      setInstitutions([]);
+    }
+  };
 
-    const timeoutId = setTimeout(searchInstitutions, 300);
+  // Пошук закладів освіти з debounce
+  useEffect(() => {
+    if (!showInstitutions) return;
+
+    const timeoutId = setTimeout(() => {
+      loadInstitutions(formData.institution);
+    }, 300);
+
     return () => clearTimeout(timeoutId);
-  }, [formData.institution]);
+  }, [formData.institution, showInstitutions]);
+
+  // Завантажити популярні при фокусі
+  const handleInstitutionFocus = () => {
+    setShowInstitutions(true);
+    if (institutions.length === 0) {
+      loadInstitutions(formData.institution);
+    }
+  };
 
   useEffect(() => {
     const fetchMyIdeas = async () => {
@@ -303,9 +313,9 @@ function ProfilePage() {
                         name="institution"
                         value={formData.institution}
                         onChange={handleChange}
-                        onFocus={() => setShowInstitutions(true)}
+                        onFocus={handleInstitutionFocus}
                         onBlur={() => setTimeout(() => setShowInstitutions(false), 200)}
-                        placeholder="Почніть вводити назву закладу..."
+                        placeholder="Оберіть або введіть назву закладу..."
                         autoComplete="off"
                       />
                       {showInstitutions && institutions.length > 0 && (
