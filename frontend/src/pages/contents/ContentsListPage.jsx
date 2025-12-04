@@ -1,18 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Container, Row, Col, Card, Badge, Form, InputGroup, Button, Nav } from 'react-bootstrap';
+import { Container, Row, Col, Card, Badge, Form, InputGroup, Button } from 'react-bootstrap';
 import { FaSearch, FaEye, FaHeart, FaComment, FaExternalLinkAlt } from 'react-icons/fa';
 import { contentsAPI, fieldsAPI } from '../../api';
 import Loading from '../../components/common/Loading';
 import useTitle from '../../hooks/useTitle';
-
-const CONTENT_TYPES = [
-  { value: '', label: 'Всі' },
-  { value: 'idea', label: 'Ідеї' },
-  { value: 'resource', label: 'Ресурси' },
-  { value: 'webinar', label: 'Вебінари' },
-  { value: 'lecture', label: 'Лекції' },
-];
 
 const getContentTypeLabel = (type) => {
   const labels = {
@@ -35,7 +27,7 @@ const getContentTypeVariant = (type) => {
 };
 
 function ContentsListPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const contentType = searchParams.get('type') || '';
 
   useTitle(contentType ? getContentTypeLabel(contentType) : 'Контент');
@@ -86,14 +78,6 @@ function ContentsListPage() {
     // Пошук вже відбувається через useEffect при зміні search
   };
 
-  const handleTypeChange = (type) => {
-    if (type) {
-      setSearchParams({ type });
-    } else {
-      setSearchParams({});
-    }
-  };
-
   const getStatusBadge = (contentStatus) => {
     const variants = {
       idea: 'primary',
@@ -116,21 +100,6 @@ function ContentsListPage() {
           + Додати
         </Button>
       </div>
-
-      {/* Табки типів контенту */}
-      <Nav variant="tabs" className="mb-4">
-        {CONTENT_TYPES.map((type) => (
-          <Nav.Item key={type.value}>
-            <Nav.Link
-              active={contentType === type.value}
-              onClick={() => handleTypeChange(type.value)}
-              style={{ cursor: 'pointer' }}
-            >
-              {type.label}
-            </Nav.Link>
-          </Nav.Item>
-        ))}
-      </Nav>
 
       {/* Фільтри */}
       <Card className="mb-4">

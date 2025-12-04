@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Navbar, Nav, Container, Button, NavDropdown } from 'react-bootstrap';
+import { Navbar, Nav, Container, Button } from 'react-bootstrap';
 import { FaFlask, FaUser, FaSignOutAlt } from 'react-icons/fa';
 import useAuthStore from '../../store/authStore';
 
@@ -22,14 +22,10 @@ function AppNavbar() {
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="me-auto">
-            <NavDropdown title="Контент" id="content-dropdown">
-              <NavDropdown.Item as={Link} to="/contents">Весь контент</NavDropdown.Item>
-              <NavDropdown.Divider />
-              <NavDropdown.Item as={Link} to="/contents?type=idea">Ідеї</NavDropdown.Item>
-              <NavDropdown.Item as={Link} to="/contents?type=resource">Ресурси</NavDropdown.Item>
-              <NavDropdown.Item as={Link} to="/contents?type=webinar">Вебінари</NavDropdown.Item>
-              <NavDropdown.Item as={Link} to="/contents?type=lecture">Лекції</NavDropdown.Item>
-            </NavDropdown>
+            <Nav.Link as={Link} to="/contents?type=idea">Ідеї</Nav.Link>
+            <Nav.Link as={Link} to="/contents?type=resource">Ресурси</Nav.Link>
+            <Nav.Link as={Link} to="/contents?type=webinar">Вебінари</Nav.Link>
+            <Nav.Link as={Link} to="/contents?type=lecture">Лекції</Nav.Link>
             <Nav.Link as={Link} to="/users">Науковці</Nav.Link>
           </Nav>
           <Nav>
