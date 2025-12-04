@@ -1,6 +1,6 @@
 # Наукові Знахідки
 
-Веб-платформа для обміну науковими ідеями між студентами та викладачами.
+Веб-платформа для обміну науковим контентом між студентами та викладачами.
 
 ## Технології
 
@@ -22,12 +22,16 @@
 ## Функціонал
 
 - Реєстрація та автентифікація користувачів (студент, викладач, дослідник)
-- Публікація наукових ідей з категоріями та ключовими словами
-- Коментування ідей
+- Публікація контенту різних типів:
+  - **Ідеї** - наукові ідеї та пропозиції
+  - **Ресурси** - корисні матеріали та посилання
+  - **Вебінари** - онлайн-заходи та записи
+  - **Лекції** - гостьові лекції
+- Коментування контенту (з підтримкою вкладених відповідей)
 - Лайки та перегляди
 - Підписка на інших користувачів
-- Пошук та фільтрація ідей
-- Профілі користувачів з науковими інтересами, публікаціями, ORCID
+- Пошук та фільтрація за галузями науки
+- Профілі користувачів з науковими інтересами, публікаціями, ORCID, Google Scholar, Scopus, Web of Science
 
 ## Швидкий старт
 
@@ -46,9 +50,6 @@ pip install -r requirements.txt
 
 # Створіть базу даних
 python manage.py migrate
-
-# Завантажте початкові дані (галузі науки)
-python manage.py loaddata scientific_fields.json
 
 # Створіть адміністратора
 python manage.py createsuperuser
@@ -83,16 +84,16 @@ Frontend готовий: http://localhost:5173/
 - `POST /api/auth/refresh/` - оновлення access токена
 - `GET /api/auth/me/` - поточний користувач
 
-### Ідеї
-- `GET /api/ideas/` - список ідей (з фільтрацією та пошуком)
-- `POST /api/ideas/` - створити ідею
-- `GET /api/ideas/{slug}/` - деталі ідеї
-- `PATCH /api/ideas/{slug}/` - оновити ідею
-- `DELETE /api/ideas/{slug}/` - видалити ідею
-- `POST /api/ideas/{slug}/like/` - лайкнути
-- `GET /api/ideas/{slug}/comments/` - коментарі
-- `POST /api/ideas/{slug}/comments/` - додати коментар
-- `GET /api/ideas/my/` - мої ідеї
+### Контент
+- `GET /api/contents/` - список контенту (з фільтрацією та пошуком)
+- `GET /api/contents/?content_type=idea` - фільтр за типом (idea, resource, webinar, lecture)
+- `POST /api/contents/` - створити контент
+- `GET /api/contents/{slug}/` - деталі контенту
+- `PATCH /api/contents/{slug}/` - оновити контент
+- `DELETE /api/contents/{slug}/` - видалити контент
+- `POST /api/contents/{slug}/like/` - лайкнути
+- `POST /api/contents/{slug}/comment/` - додати коментар
+- `GET /api/contents/my/` - мій контент
 
 ### Користувачі
 - `GET /api/users/` - список користувачів
@@ -101,10 +102,14 @@ Frontend готовий: http://localhost:5173/
 - `POST /api/users/{id}/follow/` - підписатися/відписатися
 - `GET /api/users/{id}/followers/` - підписники
 - `GET /api/users/{id}/following/` - підписки
-- `GET /api/users/{id}/ideas/` - ідеї користувача
+- `GET /api/users/{id}/contents/` - контент користувача
 
 ### Галузі науки
 - `GET /api/fields/` - список галузей
+
+### Заклади освіти
+- `GET /api/institutions/` - список закладів (з пошуком)
+- `POST /api/institutions/` - додати заклад
 
 ## Деплой
 
@@ -128,9 +133,9 @@ Frontend готовий: http://localhost:5173/
 ```
 naukovi-znakhidky-clean/
 ├── backend/
-│   ├── config/          # Налаштування Django
-│   ├── users/           # Модуль користувачів
-│   ├── ideas/           # Модуль ідей
+│   ├── scientific_discoveries/  # Налаштування Django
+│   ├── users/                   # Модуль користувачів
+│   ├── contents/                # Модуль контенту
 │   ├── manage.py
 │   └── requirements.txt
 ├── frontend/
