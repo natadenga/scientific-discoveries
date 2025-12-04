@@ -144,8 +144,6 @@ class InstitutionViewSet(viewsets.ModelViewSet):
     """
     serializer_class = InstitutionSerializer
     permission_classes = [permissions.AllowAny]
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['name']
     http_method_names = ['get', 'post']
 
     def get_queryset(self):
@@ -153,10 +151,8 @@ class InstitutionViewSet(viewsets.ModelViewSet):
 
         search = self.request.query_params.get('search', '')
         if search:
-            queryset = Institution.objects.filter(name__icontains=search)
+            return Institution.objects.filter(name__icontains=search)[:10]
         else:
-            queryset = Institution.objects.annotate(
+            return Institution.objects.annotate(
                 users_count=Count('users')
-                ).order_by('-users_count', 'name')
-
-        return queryset[:10]
+            ).order_by('-users_count', 'name')[:10]
