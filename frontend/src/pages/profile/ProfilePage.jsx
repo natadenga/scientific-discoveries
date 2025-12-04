@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert, Image, Tab, Tabs, Modal, ListGroup } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
-import { usersAPI } from '../../api/users';
+import { usersAPI, institutionsAPI } from '../../api/users';
 import { ideasAPI } from '../../api/ideas';
 import useTitle from '../../hooks/useTitle';
 
@@ -15,10 +15,15 @@ function ProfilePage() {
     first_name: '',
     last_name: '',
     bio: '',
+    institution: '',
+    education_level: '',
+    role: '',
     scientific_interests: '',
     publications: '',
     orcid: '',
     google_scholar: '',
+    web_of_science: '',
+    scopus: '',
   });
   const [myIdeas, setMyIdeas] = useState([]);
   const [followers, setFollowers] = useState([]);
@@ -29,6 +34,10 @@ function ProfilePage() {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
+  // Для автокомпліту закладів освіти
+  const [institutions, setInstitutions] = useState([]);
+  const [showInstitutions, setShowInstitutions] = useState(false);
+
   useEffect(() => {
     if (user) {
       setFormData({
@@ -36,13 +45,37 @@ function ProfilePage() {
         first_name: user.first_name || '',
         last_name: user.last_name || '',
         bio: user.bio || '',
+        institution: user.institution || '',
+        education_level: user.education_level || '',
+        role: user.role || '',
         scientific_interests: user.scientific_interests || '',
         publications: user.publications || '',
         orcid: user.orcid || '',
         google_scholar: user.google_scholar || '',
+        web_of_science: user.web_of_science || '',
+        scopus: user.scopus || '',
       });
     }
   }, [user]);
+
+  // Пошук закладів освіти
+  useEffect(() => {
+    const searchInstitutions = async () => {
+      if (formData.institution.length < 2) {
+        setInstitutions([]);
+        return;
+      }
+      try {
+        const response = await institutionsAPI.search(formData.institution);
+        setInstitutions(response.data.results || response.data || []);
+      } catch {
+        setInstitutions([]);
+      }
+    };
+
+    const timeoutId = setTimeout(searchInstitutions, 300);
+    return () => clearTimeout(timeoutId);
+  }, [formData.institution]);
 
   useEffect(() => {
     const fetchMyIdeas = async () => {
@@ -77,6 +110,11 @@ function ProfilePage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleInstitutionSelect = (name) => {
+    setFormData({ ...formData, institution: name });
+    setShowInstitutions(false);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -107,9 +145,12 @@ function ProfilePage() {
     const levels = {
       incomplete_secondary: 'Неповна середня освіта',
       secondary: 'Середня освіта',
+      junior_bachelor: 'Фаховий молодший бакалавр',
       bachelor: 'Бакалавр',
       master: 'Магістр',
-      phd: 'Аспірант / PhD',
+      phd: 'Аспірант',
+      candidate: 'Кандидат наук',
+      doctor_phd: 'Доктор філософії (PhD)',
       doctor: 'Доктор наук',
     };
     return levels[level] || level;
@@ -225,6 +266,66 @@ function ProfilePage() {
                       />
                     </Form.Group>
 
+                    <Row>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Роль</Form.Label>
+                          <Form.Select name="role" value={formData.role} onChange={handleChange}>
+                            <option value="student">Студент</option>
+                            <option value="teacher">Викладач</option>
+                            <option value="researcher">Дослідник</option>
+                          </Form.Select>
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Рівень освіти</Form.Label>
+                          <Form.Select name="education_level" value={formData.education_level} onChange={handleChange}>
+                            <option value="">Оберіть...</option>
+                            <option value="incomplete_secondary">Неповна середня освіта</option>
+                            <option value="secondary">Середня освіта</option>
+                            <option value="junior_bachelor">Фаховий молодший бакалавр</option>
+                            <option value="bachelor">Бакалавр</option>
+                            <option value="master">Магістр</option>
+                            <option value="phd">Аспірант</option>
+                            <option value="candidate">Кандидат наук</option>
+                            <option value="doctor_phd">Доктор філософії (PhD)</option>
+                            <option value="doctor">Доктор наук</option>
+                          </Form.Select>
+                        </Form.Group>
+                      </Col>
+                    </Row>
+
+                    <Form.Group className="mb-3 position-relative">
+                      <Form.Label>Заклад освіти</Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="institution"
+                        value={formData.institution}
+                        onChange={handleChange}
+                        onFocus={() => setShowInstitutions(true)}
+                        onBlur={() => setTimeout(() => setShowInstitutions(false), 200)}
+                        placeholder="Почніть вводити назву закладу..."
+                        autoComplete="off"
+                      />
+                      {showInstitutions && institutions.length > 0 && (
+                        <ListGroup
+                          className="position-absolute w-100 shadow"
+                          style={{ zIndex: 1000, maxHeight: '200px', overflowY: 'auto' }}
+                        >
+                          {institutions.map((inst) => (
+                            <ListGroup.Item
+                              key={inst.id}
+                              action
+                              onClick={() => handleInstitutionSelect(inst.name)}
+                            >
+                              {inst.name}
+                            </ListGroup.Item>
+                          ))}
+                        </ListGroup>
+                      )}
+                    </Form.Group>
+
                     <Form.Group className="mb-3">
                       <Form.Label>Біографія</Form.Label>
                       <Form.Control
@@ -250,16 +351,21 @@ function ProfilePage() {
                     </Form.Group>
 
                     <Form.Group className="mb-3">
-                      <Form.Label>Публікації</Form.Label>
+                      <Form.Label>Публікації (посилання)</Form.Label>
                       <Form.Control
                         as="textarea"
                         rows={3}
                         name="publications"
                         value={formData.publications}
                         onChange={handleChange}
-                        placeholder="Список ваших наукових публікацій..."
+                        placeholder="Посилання на ваші наукові публікації (кожне з нового рядка)"
                       />
+                      <Form.Text className="text-muted">
+                        Вводіть кожне посилання з нового рядка
+                      </Form.Text>
                     </Form.Group>
+
+                    <h6 className="mb-3 mt-4">Наукові профілі</h6>
 
                     <Row>
                       <Col md={6}>
@@ -272,9 +378,6 @@ function ProfilePage() {
                             onChange={handleChange}
                             placeholder="0000-0000-0000-0000"
                           />
-                          <Form.Text className="text-muted">
-                            Ваш унікальний ідентифікатор науковця
-                          </Form.Text>
                         </Form.Group>
                       </Col>
                       <Col md={6}>
@@ -286,6 +389,33 @@ function ProfilePage() {
                             value={formData.google_scholar}
                             onChange={handleChange}
                             placeholder="https://scholar.google.com/..."
+                          />
+                        </Form.Group>
+                      </Col>
+                    </Row>
+
+                    <Row>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Web of Science</Form.Label>
+                          <Form.Control
+                            type="url"
+                            name="web_of_science"
+                            value={formData.web_of_science}
+                            onChange={handleChange}
+                            placeholder="https://www.webofscience.com/..."
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Scopus</Form.Label>
+                          <Form.Control
+                            type="url"
+                            name="scopus"
+                            value={formData.scopus}
+                            onChange={handleChange}
+                            placeholder="https://www.scopus.com/..."
                           />
                         </Form.Group>
                       </Col>

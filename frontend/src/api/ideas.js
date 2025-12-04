@@ -22,8 +22,12 @@ export const ideasAPI = {
   // Отримати коментарі
   getComments: (slug) => api.get(`/ideas/${slug}/comments/`),
 
-  // Додати коментар
-  addComment: (slug, content) => api.post(`/ideas/${slug}/comments/`, { content }),
+  // Додати коментар (з опціональним parent_id для відповідей)
+  addComment: (slug, content, parentId = null) => {
+    const data = { content };
+    if (parentId) data.parent_id = parentId;
+    return api.post(`/ideas/${slug}/comments/`, data);
+  },
 
   // Видалити коментар
   deleteComment: (commentId) => api.delete(`/ideas/comments/${commentId}/`),

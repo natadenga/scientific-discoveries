@@ -8,17 +8,17 @@ class ScientificField(models.Model):
     name = models.CharField('Назва', max_length=255, unique=True)
     slug = models.SlugField('Slug', unique=True, blank=True)
     description = models.TextField('Опис', blank=True)
-    
+
     class Meta:
         verbose_name = 'Галузь науки'
         verbose_name_plural = 'Галузі науки'
         ordering = ['name']
-    
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
-    
+
     def __str__(self):
         return self.name
 
@@ -34,23 +34,21 @@ class Idea(models.Model):
     title = models.CharField('Назва', max_length=255)
     slug = models.SlugField('Slug', max_length=100, unique=True, blank=True)
     description = models.TextField('Опис')
-    
+
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='ideas',
         verbose_name='Автор'
     )
-    
-    scientific_field = models.ForeignKey(
+
+    scientific_fields = models.ManyToManyField(
         ScientificField,
-        on_delete=models.SET_NULL,
-        null=True,
         blank=True,
         related_name='ideas',
-        verbose_name='Галузь науки'
+        verbose_name='Галузі науки'
     )
-    
+
     keywords = models.CharField('Ключові слова', max_length=500, blank=True)
     status = models.CharField(
         'Статус',
@@ -58,21 +56,20 @@ class Idea(models.Model):
         choices=IdeaStatus.choices,
         default=IdeaStatus.IDEA
     )
-    
+
     is_public = models.BooleanField('Публічна', default=True)
     is_open_for_collaboration = models.BooleanField('Відкрита для співпраці', default=True)
-    
+
     views_count = models.PositiveIntegerField('Перегляди', default=0)
-    likes_count = models.PositiveIntegerField('Лайки', default=0)
-    
+
     created_at = models.DateTimeField('Дата створення', auto_now_add=True)
     updated_at = models.DateTimeField('Дата оновлення', auto_now=True)
-    
+
     class Meta:
         verbose_name = 'Ідея'
         verbose_name_plural = 'Ідеї'
         ordering = ['-created_at']
-    
+
     def save(self, *args, **kwargs):
         if not self.slug:
             # slugify з allow_unicode для кирилиці, обмежуємо до 80 символів
@@ -88,9 +85,38 @@ class Idea(models.Model):
                 counter += 1
             self.slug = slug
         super().save(*args, **kwargs)
-    
+
+    @property
+    def likes_count(self):
+        return self.likes.count()
+
     def __str__(self):
         return self.title
+
+
+class Like(models.Model):
+    """Лайк до ідеї"""
+    idea = models.ForeignKey(
+        Idea,
+        on_delete=models.CASCADE,
+        related_name='likes',
+        verbose_name='Ідея'
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='likes',
+        verbose_name='Користувач'
+    )
+    created_at = models.DateTimeField('Дата', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Лайк'
+        verbose_name_plural = 'Лайки'
+        unique_together = ['idea', 'user']  # Один лайк від користувача
+
+    def __str__(self):
+        return f"{self.user} лайкнув {self.idea}"
 
 
 class Comment(models.Model):
@@ -107,13 +133,21 @@ class Comment(models.Model):
         related_name='comments',
         verbose_name='Автор'
     )
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='replies',
+        verbose_name='Батьківський коментар'
+    )
     content = models.TextField('Зміст')
     created_at = models.DateTimeField('Дата створення', auto_now_add=True)
-    
+
     class Meta:
         verbose_name = 'Коментар'
         verbose_name_plural = 'Коментарі'
         ordering = ['created_at']
-    
+
     def __str__(self):
         return f"Коментар від {self.author} до {self.idea}"

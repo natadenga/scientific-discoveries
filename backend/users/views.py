@@ -1,13 +1,15 @@
-from rest_framework import viewsets, generics, status, permissions
+from rest_framework import viewsets, generics, status, permissions, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 
+from .models import Institution
 from .serializers import (
     UserSerializer,
     UserCreateSerializer,
     UserUpdateSerializer,
-    UserShortSerializer
+    UserShortSerializer,
+    InstitutionSerializer
 )
 
 User = get_user_model()
@@ -127,3 +129,18 @@ class RegisterView(generics.CreateAPIView):
             'message': 'Користувача успішно створено',
             'user': UserSerializer(user).data
         }, status=status.HTTP_201_CREATED)
+
+
+class InstitutionViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet для закладів освіти
+
+    GET /api/institutions/ - список закладів (з пошуком)
+    POST /api/institutions/ - додати новий заклад
+    """
+    queryset = Institution.objects.all()
+    serializer_class = InstitutionSerializer
+    permission_classes = [permissions.AllowAny]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name']
+    http_method_names = ['get', 'post']

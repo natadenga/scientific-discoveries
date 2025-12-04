@@ -149,9 +149,9 @@ function IdeasListPage() {
                       {idea.title}
                     </Link>
                   </Card.Title>
-                  {idea.scientific_field && (
+                  {idea.scientific_fields && idea.scientific_fields.length > 0 && (
                     <small className="text-muted d-block mb-2">
-                      {idea.scientific_field.name}
+                      {idea.scientific_fields.map((f) => f.name).join(', ')}
                     </small>
                   )}
                   <div className="d-flex align-items-center text-muted small">

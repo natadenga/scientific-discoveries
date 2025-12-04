@@ -23,4 +23,13 @@ export const usersAPI = {
   updateProfile: (data) => api.patch('/users/me/', data),
 };
 
+// API для закладів освіти
+export const institutionsAPI = {
+  // Пошук закладів освіти
+  search: (query) => api.get('/institutions/', { params: { search: query } }),
+
+  // Додати новий заклад
+  create: (name) => api.post('/institutions/', { name }),
+};
+
 export default usersAPI;

@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 
-from .models import Idea, ScientificField, Comment
+from .models import Idea, ScientificField, Comment, Like
 from .serializers import (
     IdeaListSerializer,
     IdeaDetailSerializer,
@@ -47,7 +47,7 @@ class IdeaViewSet(viewsets.ModelViewSet):
     GET /api/ideas/{slug}/ - деталі ідеї
     PATCH /api/ideas/{slug}/ - оновити ідею
     DELETE /api/ideas/{slug}/ - видалити ідею
-    POST /api/ideas/{slug}/like/ - лайкнути
+    POST /api/ideas/{slug}/like/ - лайкнути/анлайкнути
     POST /api/ideas/{slug}/comments/ - додати коментар
     """
     queryset = Idea.objects.filter(is_public=True)
@@ -55,9 +55,9 @@ class IdeaViewSet(viewsets.ModelViewSet):
 
     # Фільтрація та пошук
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['status', 'scientific_field__slug', 'author', 'is_open_for_collaboration']
+    filterset_fields = ['status', 'author', 'is_open_for_collaboration']
     search_fields = ['title', 'description', 'keywords']
-    ordering_fields = ['created_at', 'views_count', 'likes_count']
+    ordering_fields = ['created_at', 'views_count']
     ordering = ['-created_at']  # За замовчуванням - нові спочатку
 
     def get_permissions(self):
@@ -93,7 +93,12 @@ class IdeaViewSet(viewsets.ModelViewSet):
                 Q(is_public=True) | Q(author=self.request.user)
             )
 
-        return queryset.select_related('author', 'scientific_field')
+        # Фільтр по галузі науки
+        field_slug = self.request.query_params.get('scientific_field__slug')
+        if field_slug:
+            queryset = queryset.filter(scientific_fields__slug=field_slug)
+
+        return queryset.select_related('author').prefetch_related('scientific_fields').distinct()
 
     def retrieve(self, request, *args, **kwargs):
         """При перегляді - збільшуємо лічильник переглядів"""
@@ -106,14 +111,22 @@ class IdeaViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def like(self, request, slug=None):
         """
-        POST /api/ideas/{slug}/like/ - лайкнути ідею
+        POST /api/ideas/{slug}/like/ - лайкнути/анлайкнути ідею (toggle)
         """
         idea = self.get_object()
-        idea.likes_count += 1
-        idea.save(update_fields=['likes_count'])
+        like, created = Like.objects.get_or_create(idea=idea, user=request.user)
+
+        if not created:
+            # Лайк вже існує - видаляємо (анлайк)
+            like.delete()
+            return Response({
+                'status': 'unliked',
+                'likes_count': idea.likes.count()
+            })
+
         return Response({
             'status': 'liked',
-            'likes_count': idea.likes_count
+            'likes_count': idea.likes.count()
         })
 
     @action(detail=True, methods=['get', 'post'], url_path='comments')
@@ -125,7 +138,8 @@ class IdeaViewSet(viewsets.ModelViewSet):
         idea = self.get_object()
 
         if request.method == 'GET':
-            comments = idea.comments.all()
+            # Повертаємо тільки коментарі верхнього рівня
+            comments = idea.comments.filter(parent__isnull=True)
             serializer = CommentSerializer(comments, many=True)
             return Response(serializer.data)
 

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, Alert, ListGroup } from 'react-bootstrap';
 import useAuthStore from '../../store/authStore';
 import useTitle from '../../hooks/useTitle';
+import { institutionsAPI } from '../../api';
 
 function RegisterPage() {
   useTitle('Реєстрація');
@@ -17,19 +18,53 @@ function RegisterPage() {
     institution: '',
     education_level: '',
   });
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Для автокомпліту закладів освіти
+  const [institutions, setInstitutions] = useState([]);
+  const [showInstitutions, setShowInstitutions] = useState(false);
+
   const { register } = useAuthStore();
   const navigate = useNavigate();
+
+  // Пошук закладів освіти
+  useEffect(() => {
+    const searchInstitutions = async () => {
+      if (formData.institution.length < 2) {
+        setInstitutions([]);
+        return;
+      }
+      try {
+        const response = await institutionsAPI.search(formData.institution);
+        setInstitutions(response.data.results || response.data || []);
+      } catch {
+        setInstitutions([]);
+      }
+    };
+
+    const timeoutId = setTimeout(searchInstitutions, 300);
+    return () => clearTimeout(timeoutId);
+  }, [formData.institution]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleInstitutionSelect = (name) => {
+    setFormData({ ...formData, institution: name });
+    setShowInstitutions(false);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!agreeToTerms) {
+      setError('Будь ласка, погодьтесь з умовами використання платформи');
+      return;
+    }
 
     if (formData.password !== formData.password_confirm) {
       setError('Паролі не співпадають');
@@ -161,15 +196,34 @@ function RegisterPage() {
                   </Form.Select>
                 </Form.Group>
 
-                <Form.Group className="mb-3">
-                  <Form.Label>Навчальний заклад</Form.Label>
+                <Form.Group className="mb-3 position-relative">
+                  <Form.Label>Заклад освіти</Form.Label>
                   <Form.Control
                     type="text"
                     name="institution"
                     value={formData.institution}
                     onChange={handleChange}
-                    placeholder="Університет / Інститут"
+                    onFocus={() => setShowInstitutions(true)}
+                    onBlur={() => setTimeout(() => setShowInstitutions(false), 200)}
+                    placeholder="Почніть вводити назву закладу..."
+                    autoComplete="off"
                   />
+                  {showInstitutions && institutions.length > 0 && (
+                    <ListGroup
+                      className="position-absolute w-100 shadow"
+                      style={{ zIndex: 1000, maxHeight: '200px', overflowY: 'auto' }}
+                    >
+                      {institutions.map((inst) => (
+                        <ListGroup.Item
+                          key={inst.id}
+                          action
+                          onClick={() => handleInstitutionSelect(inst.name)}
+                        >
+                          {inst.name}
+                        </ListGroup.Item>
+                      ))}
+                    </ListGroup>
+                  )}
                 </Form.Group>
 
                 <Form.Group className="mb-3">
@@ -178,11 +232,24 @@ function RegisterPage() {
                     <option value="">Оберіть...</option>
                     <option value="incomplete_secondary">Неповна середня освіта</option>
                     <option value="secondary">Середня освіта</option>
+                    <option value="junior_bachelor">Фаховий молодший бакалавр</option>
                     <option value="bachelor">Бакалавр</option>
                     <option value="master">Магістр</option>
-                    <option value="phd">Аспірант / PhD</option>
+                    <option value="phd">Аспірант</option>
+                    <option value="candidate">Кандидат наук</option>
+                    <option value="doctor_phd">Доктор філософії (PhD)</option>
                     <option value="doctor">Доктор наук</option>
                   </Form.Select>
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Check
+                    type="checkbox"
+                    id="agreeToTerms"
+                    checked={agreeToTerms}
+                    onChange={(e) => setAgreeToTerms(e.target.checked)}
+                    label="Погоджуюсь на розміщення інформації про себе на платформі «Наукові знахідки» публічно"
+                  />
                 </Form.Group>
 
                 <Button

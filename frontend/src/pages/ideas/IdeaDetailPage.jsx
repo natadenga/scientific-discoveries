@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Badge, Button, Form, Alert } from 'react-bootstrap';
-import { FaHeart, FaEdit, FaTrash, FaArrowLeft } from 'react-icons/fa';
+import { FaHeart, FaEdit, FaTrash, FaArrowLeft, FaReply } from 'react-icons/fa';
 import { ideasAPI } from '../../api';
 import useAuthStore from '../../store/authStore';
 import Loading from '../../components/common/Loading';
@@ -17,6 +17,8 @@ function IdeaDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [comment, setComment] = useState('');
+  const [replyTo, setReplyTo] = useState(null);
+  const [replyContent, setReplyContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -59,6 +61,30 @@ function IdeaDetailPage() {
       setComment('');
     } catch (err) {
       console.error('Error adding comment:', err);
+    }
+    setSubmitting(false);
+  };
+
+  const handleReply = async (e, parentId) => {
+    e.preventDefault();
+    if (!replyContent.trim()) return;
+
+    setSubmitting(true);
+    try {
+      const response = await ideasAPI.addComment(slug, replyContent, parentId);
+      // Додаємо відповідь до відповідного коментаря
+      setIdea({
+        ...idea,
+        comments: idea.comments.map((c) =>
+          c.id === parentId
+            ? { ...c, replies: [...(c.replies || []), response.data] }
+            : c
+        ),
+      });
+      setReplyContent('');
+      setReplyTo(null);
+    } catch (err) {
+      console.error('Error adding reply:', err);
     }
     setSubmitting(false);
   };
@@ -140,9 +166,9 @@ function IdeaDetailPage() {
 
               <h1 className="mb-3">{idea.title}</h1>
 
-              {idea.scientific_field && (
+              {idea.scientific_fields && idea.scientific_fields.length > 0 && (
                 <p className="text-muted">
-                  <strong>Галузь:</strong> {idea.scientific_field.name}
+                  <strong>Галузі:</strong> {idea.scientific_fields.map((f) => f.name).join(', ')}
                 </p>
               )}
 
@@ -206,7 +232,7 @@ function IdeaDetailPage() {
                 <p className="text-muted text-center">Поки немає коментарів</p>
               ) : (
                 idea.comments?.map((c) => (
-                  <Card key={c.id} className="mb-2">
+                  <Card key={c.id} className="mb-3">
                     <Card.Body className="py-2">
                       <div className="d-flex justify-content-between">
                         <Link to={`/users/${c.author.id}`}>
@@ -216,7 +242,70 @@ function IdeaDetailPage() {
                           {new Date(c.created_at).toLocaleDateString('uk-UA')}
                         </small>
                       </div>
-                      <p className="mb-0 mt-1">{c.content}</p>
+                      <p className="mb-1 mt-1">{c.content}</p>
+                      {isAuthenticated && (
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="p-0 text-muted"
+                          onClick={() => {
+                            setReplyTo(replyTo === c.id ? null : c.id);
+                            setReplyContent('');
+                          }}
+                        >
+                          <FaReply className="me-1" />
+                          Відповісти
+                        </Button>
+                      )}
+
+                      {/* Форма відповіді */}
+                      {replyTo === c.id && (
+                        <Form onSubmit={(e) => handleReply(e, c.id)} className="mt-2">
+                          <Form.Control
+                            as="textarea"
+                            rows={2}
+                            placeholder="Напишіть відповідь..."
+                            value={replyContent}
+                            onChange={(e) => setReplyContent(e.target.value)}
+                          />
+                          <div className="mt-2">
+                            <Button
+                              type="submit"
+                              variant="primary"
+                              size="sm"
+                              disabled={submitting || !replyContent.trim()}
+                            >
+                              {submitting ? 'Відправка...' : 'Відповісти'}
+                            </Button>
+                            <Button
+                              variant="link"
+                              size="sm"
+                              onClick={() => setReplyTo(null)}
+                            >
+                              Скасувати
+                            </Button>
+                          </div>
+                        </Form>
+                      )}
+
+                      {/* Відповіді */}
+                      {c.replies && c.replies.length > 0 && (
+                        <div className="ms-4 mt-2 border-start ps-3">
+                          {c.replies.map((reply) => (
+                            <div key={reply.id} className="mb-2">
+                              <div className="d-flex justify-content-between">
+                                <Link to={`/users/${reply.author.id}`}>
+                                  <strong>{reply.author.full_name || reply.author.username}</strong>
+                                </Link>
+                                <small className="text-muted">
+                                  {new Date(reply.created_at).toLocaleDateString('uk-UA')}
+                                </small>
+                              </div>
+                              <p className="mb-0 mt-1">{reply.content}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </Card.Body>
                   </Card>
                 ))

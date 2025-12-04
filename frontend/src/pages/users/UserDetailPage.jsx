@@ -86,9 +86,12 @@ function UserDetailPage() {
     const levels = {
       incomplete_secondary: 'Неповна середня освіта',
       secondary: 'Середня освіта',
+      junior_bachelor: 'Фаховий молодший бакалавр',
       bachelor: 'Бакалавр',
       master: 'Магістр',
-      phd: 'Аспірант / PhD',
+      phd: 'Аспірант',
+      candidate: 'Кандидат наук',
+      doctor_phd: 'Доктор філософії (PhD)',
       doctor: 'Доктор наук',
     };
     return levels[level] || level;
@@ -189,6 +192,12 @@ function UserDetailPage() {
           <Card className="mb-4">
             <Card.Header>Інформація</Card.Header>
             <Card.Body>
+              {user.email && (
+                <p className="mb-2">
+                  <strong>Email:</strong>{' '}
+                  <a href={`mailto:${user.email}`}>{user.email}</a>
+                </p>
+              )}
               {user.education_level && (
                 <p className="mb-2">
                   <strong>Освіта:</strong> {getEducationLabel(user.education_level)}
@@ -203,14 +212,30 @@ function UserDetailPage() {
                 </p>
               )}
               {user.google_scholar && (
-                <p className="mb-0">
+                <p className="mb-2">
                   <strong>Google Scholar:</strong>{' '}
                   <a href={user.google_scholar} target="_blank" rel="noopener noreferrer">
                     Профіль
                   </a>
                 </p>
               )}
-              {!user.education_level && !user.orcid && !user.google_scholar && (
+              {user.web_of_science && (
+                <p className="mb-2">
+                  <strong>Web of Science:</strong>{' '}
+                  <a href={user.web_of_science} target="_blank" rel="noopener noreferrer">
+                    Профіль
+                  </a>
+                </p>
+              )}
+              {user.scopus && (
+                <p className="mb-2">
+                  <strong>Scopus:</strong>{' '}
+                  <a href={user.scopus} target="_blank" rel="noopener noreferrer">
+                    Профіль
+                  </a>
+                </p>
+              )}
+              {!user.email && !user.education_level && !user.orcid && !user.google_scholar && !user.web_of_science && !user.scopus && (
                 <p className="text-muted mb-0">Додаткова інформація не вказана</p>
               )}
             </Card.Body>
@@ -234,8 +259,8 @@ function UserDetailPage() {
                       {idea.title}
                     </Link>
                   </Card.Title>
-                  {idea.scientific_field && (
-                    <small className="text-muted">{idea.scientific_field.name}</small>
+                  {idea.scientific_fields && idea.scientific_fields.length > 0 && (
+                    <small className="text-muted">{idea.scientific_fields.map((f) => f.name).join(', ')}</small>
                   )}
                 </Card.Body>
               </Card>

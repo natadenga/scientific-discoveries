@@ -15,7 +15,7 @@ function IdeaEditPage() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    scientific_field_id: '',
+    scientific_field_ids: [],
     keywords: '',
     status: 'idea',
     is_public: true,
@@ -45,7 +45,7 @@ function IdeaEditPage() {
         setFormData({
           title: idea.title,
           description: idea.description,
-          scientific_field_id: idea.scientific_field?.id || '',
+          scientific_field_ids: idea.scientific_fields?.map((f) => f.id) || [],
           keywords: idea.keywords || '',
           status: idea.status,
           is_public: idea.is_public,
@@ -71,6 +71,17 @@ function IdeaEditPage() {
     });
   };
 
+  const handleFieldToggle = (fieldId) => {
+    setFormData((prev) => {
+      const ids = prev.scientific_field_ids;
+      if (ids.includes(fieldId)) {
+        return { ...prev, scientific_field_ids: ids.filter((id) => id !== fieldId) };
+      } else {
+        return { ...prev, scientific_field_ids: [...ids, fieldId] };
+      }
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -78,8 +89,8 @@ function IdeaEditPage() {
 
     try {
       const data = { ...formData };
-      if (!data.scientific_field_id) {
-        delete data.scientific_field_id;
+      if (data.scientific_field_ids.length === 0) {
+        delete data.scientific_field_ids;
       }
 
       const response = await ideasAPI.update(slug, data);
@@ -137,39 +148,37 @@ function IdeaEditPage() {
                   />
                 </Form.Group>
 
-                <Row>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Галузь науки</Form.Label>
-                      <Form.Select
-                        name="scientific_field_id"
-                        value={formData.scientific_field_id}
-                        onChange={handleChange}
-                      >
-                        <option value="">Оберіть галузь...</option>
-                        {fields.map((field) => (
-                          <option key={field.id} value={field.id}>
-                            {field.name}
-                          </option>
-                        ))}
-                      </Form.Select>
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Статус</Form.Label>
-                      <Form.Select
-                        name="status"
-                        value={formData.status}
-                        onChange={handleChange}
-                      >
-                        <option value="idea">Ідея</option>
-                        <option value="in_progress">У процесі</option>
-                        <option value="completed">Завершено</option>
-                      </Form.Select>
-                    </Form.Group>
-                  </Col>
-                </Row>
+                <Form.Group className="mb-3">
+                  <Form.Label>Галузі науки</Form.Label>
+                  <div className="border rounded p-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                    {fields.map((field) => (
+                      <Form.Check
+                        key={field.id}
+                        type="checkbox"
+                        id={`field-${field.id}`}
+                        label={field.name}
+                        checked={formData.scientific_field_ids.includes(field.id)}
+                        onChange={() => handleFieldToggle(field.id)}
+                      />
+                    ))}
+                  </div>
+                  <Form.Text className="text-muted">
+                    Оберіть одну або кілька галузей науки
+                  </Form.Text>
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Статус</Form.Label>
+                  <Form.Select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleChange}
+                  >
+                    <option value="idea">Ідея</option>
+                    <option value="in_progress">У процесі</option>
+                    <option value="completed">Завершено</option>
+                  </Form.Select>
+                </Form.Group>
 
                 <Form.Group className="mb-3">
                   <Form.Label>Ключові слова</Form.Label>
