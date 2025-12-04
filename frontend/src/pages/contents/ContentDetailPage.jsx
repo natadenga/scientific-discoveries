@@ -1,19 +1,39 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Badge, Button, Form, Alert } from 'react-bootstrap';
-import { FaHeart, FaEdit, FaTrash, FaArrowLeft, FaReply } from 'react-icons/fa';
-import { ideasAPI } from '../../api';
+import { FaHeart, FaEdit, FaTrash, FaArrowLeft, FaReply, FaExternalLinkAlt } from 'react-icons/fa';
+import { contentsAPI } from '../../api';
 import useAuthStore from '../../store/authStore';
 import Loading from '../../components/common/Loading';
 import useTitle from '../../hooks/useTitle';
 
-function IdeaDetailPage() {
+const getContentTypeLabel = (type) => {
+  const labels = {
+    idea: 'Ідея',
+    resource: 'Ресурс',
+    webinar: 'Вебінар',
+    lecture: 'Лекція',
+  };
+  return labels[type] || type;
+};
+
+const getContentTypeVariant = (type) => {
+  const variants = {
+    idea: 'primary',
+    resource: 'success',
+    webinar: 'info',
+    lecture: 'warning',
+  };
+  return variants[type] || 'secondary';
+};
+
+function ContentDetailPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuthStore();
 
-  const [idea, setIdea] = useState(null);
-  useTitle(idea?.title || 'Завантаження...');
+  const [content, setContent] = useState(null);
+  useTitle(content?.title || 'Завантаження...');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [comment, setComment] = useState('');
@@ -22,16 +42,16 @@ function IdeaDetailPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const fetchIdea = async () => {
+    const fetchContent = async () => {
       try {
-        const response = await ideasAPI.getBySlug(slug);
-        setIdea(response.data);
+        const response = await contentsAPI.getBySlug(slug);
+        setContent(response.data);
       } catch {
-        setError('Ідею не знайдено');
+        setError('Контент не знайдено');
       }
       setLoading(false);
     };
-    fetchIdea();
+    fetchContent();
   }, [slug]);
 
   const handleLike = async () => {
@@ -40,8 +60,8 @@ function IdeaDetailPage() {
       return;
     }
     try {
-      const response = await ideasAPI.like(slug);
-      setIdea({ ...idea, likes_count: response.data.likes_count });
+      const response = await contentsAPI.like(slug);
+      setContent({ ...content, likes_count: response.data.likes_count });
     } catch (err) {
       console.error('Error liking:', err);
     }
@@ -53,10 +73,10 @@ function IdeaDetailPage() {
 
     setSubmitting(true);
     try {
-      const response = await ideasAPI.addComment(slug, comment);
-      setIdea({
-        ...idea,
-        comments: [...idea.comments, response.data],
+      const response = await contentsAPI.addComment(slug, comment);
+      setContent({
+        ...content,
+        comments: [...content.comments, response.data],
       });
       setComment('');
     } catch (err) {
@@ -71,11 +91,11 @@ function IdeaDetailPage() {
 
     setSubmitting(true);
     try {
-      const response = await ideasAPI.addComment(slug, replyContent, parentId);
+      const response = await contentsAPI.addComment(slug, replyContent, parentId);
       // Додаємо відповідь до відповідного коментаря
-      setIdea({
-        ...idea,
-        comments: idea.comments.map((c) =>
+      setContent({
+        ...content,
+        comments: content.comments.map((c) =>
           c.id === parentId
             ? { ...c, replies: [...(c.replies || []), response.data] }
             : c
@@ -90,17 +110,17 @@ function IdeaDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Ви впевнені, що хочете видалити цю ідею?')) return;
+    if (!window.confirm('Ви впевнені, що хочете видалити цей контент?')) return;
 
     try {
-      await ideasAPI.delete(slug);
-      navigate('/ideas');
+      await contentsAPI.delete(slug);
+      navigate('/contents');
     } catch (err) {
       console.error('Error deleting:', err);
     }
   };
 
-  const getStatusBadge = (ideaStatus) => {
+  const getStatusBadge = (contentStatus) => {
     const variants = {
       idea: 'primary',
       in_progress: 'warning',
@@ -111,14 +131,14 @@ function IdeaDetailPage() {
       in_progress: 'У процесі',
       completed: 'Завершено',
     };
-    return <Badge bg={variants[ideaStatus]}>{labels[ideaStatus]}</Badge>;
+    return <Badge bg={variants[contentStatus]}>{labels[contentStatus]}</Badge>;
   };
 
   if (loading) return <Loading />;
   if (error) return <Container className="py-4"><Alert variant="danger">{error}</Alert></Container>;
-  if (!idea) return null;
+  if (!content) return null;
 
-  const isAuthor = user?.id === idea.author.id;
+  const isAuthor = user?.id === content.author.id;
 
   return (
     <Container className="py-4">
@@ -137,8 +157,11 @@ function IdeaDetailPage() {
             <Card.Body>
               <div className="d-flex justify-content-between align-items-start mb-3">
                 <div>
-                  {getStatusBadge(idea.status)}
-                  {idea.is_open_for_collaboration && (
+                  <Badge bg={getContentTypeVariant(content.content_type)} className="me-2">
+                    {getContentTypeLabel(content.content_type)}
+                  </Badge>
+                  {getStatusBadge(content.status)}
+                  {content.is_open_for_collaboration && (
                     <Badge bg="info" className="ms-2">Шукаю співпрацю</Badge>
                   )}
                 </div>
@@ -146,7 +169,7 @@ function IdeaDetailPage() {
                   <div>
                     <Button
                       as={Link}
-                      to={`/ideas/${slug}/edit`}
+                      to={`/contents/${slug}/edit`}
                       variant="outline-primary"
                       size="sm"
                       className="me-2"
@@ -164,36 +187,50 @@ function IdeaDetailPage() {
                 )}
               </div>
 
-              <h1 className="mb-3">{idea.title}</h1>
+              <h1 className="mb-3">{content.title}</h1>
 
-              {idea.scientific_fields && idea.scientific_fields.length > 0 && (
-                <p className="text-muted">
-                  <strong>Галузі:</strong> {idea.scientific_fields.map((f) => f.name).join(', ')}
+              {content.link && (
+                <p>
+                  <a
+                    href={content.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-outline-primary btn-sm"
+                  >
+                    <FaExternalLinkAlt className="me-2" />
+                    Відкрити посилання
+                  </a>
                 </p>
               )}
 
-              {idea.keywords && (
+              {content.scientific_fields && content.scientific_fields.length > 0 && (
                 <p className="text-muted">
-                  <strong>Ключові слова:</strong> {idea.keywords}
+                  <strong>Галузі:</strong> {content.scientific_fields.map((f) => f.name).join(', ')}
+                </p>
+              )}
+
+              {content.keywords && (
+                <p className="text-muted">
+                  <strong>Ключові слова:</strong> {content.keywords}
                 </p>
               )}
 
               <hr />
 
-              <div style={{ whiteSpace: 'pre-wrap' }}>{idea.description}</div>
+              <div style={{ whiteSpace: 'pre-wrap' }}>{content.description}</div>
 
               <hr />
 
               <div className="d-flex align-items-center justify-content-between">
                 <Button
-                  variant={idea.liked ? 'danger' : 'outline-danger'}
+                  variant={content.liked ? 'danger' : 'outline-danger'}
                   onClick={handleLike}
                 >
                   <FaHeart className="me-2" />
-                  {idea.likes_count}
+                  {content.likes_count}
                 </Button>
                 <small className="text-muted">
-                  Переглядів: {idea.views_count}
+                  Переглядів: {content.views_count}
                 </small>
               </div>
             </Card.Body>
@@ -201,7 +238,7 @@ function IdeaDetailPage() {
 
           <Card>
             <Card.Header>
-              <strong>Коментарі ({idea.comments?.length || 0})</strong>
+              <strong>Коментарі ({content.comments?.length || 0})</strong>
             </Card.Header>
             <Card.Body>
               {isAuthenticated ? (
@@ -228,10 +265,10 @@ function IdeaDetailPage() {
                 </Alert>
               )}
 
-              {idea.comments?.length === 0 ? (
+              {content.comments?.length === 0 ? (
                 <p className="text-muted text-center">Поки немає коментарів</p>
               ) : (
-                idea.comments?.map((c) => (
+                content.comments?.map((c) => (
                   <Card key={c.id} className="mb-3">
                     <Card.Body className="py-2">
                       <div className="d-flex justify-content-between">
@@ -242,7 +279,7 @@ function IdeaDetailPage() {
                           {new Date(c.created_at).toLocaleDateString('uk-UA')}
                         </small>
                       </div>
-                      <p className="mb-1 mt-1">{c.content}</p>
+                      <p className="mb-1 mt-1">{c.text}</p>
                       {isAuthenticated && (
                         <Button
                           variant="link"
@@ -301,7 +338,7 @@ function IdeaDetailPage() {
                                   {new Date(reply.created_at).toLocaleDateString('uk-UA')}
                                 </small>
                               </div>
-                              <p className="mb-0 mt-1">{reply.content}</p>
+                              <p className="mb-0 mt-1">{reply.text}</p>
                             </div>
                           ))}
                         </div>
@@ -323,14 +360,14 @@ function IdeaDetailPage() {
                   className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
                   style={{ width: 50, height: 50 }}
                 >
-                  {idea.author.username[0].toUpperCase()}
+                  {content.author.username[0].toUpperCase()}
                 </div>
                 <div>
-                  <Link to={`/users/${idea.author.id}`}>
-                    <strong>{idea.author.full_name || idea.author.username}</strong>
+                  <Link to={`/users/${content.author.id}`}>
+                    <strong>{content.author.full_name || content.author.username}</strong>
                   </Link>
                   <br />
-                  <small className="text-muted">@{idea.author.username}</small>
+                  <small className="text-muted">@{content.author.username}</small>
                 </div>
               </div>
             </Card.Body>
@@ -341,11 +378,11 @@ function IdeaDetailPage() {
             <Card.Body>
               <p className="mb-1">
                 <strong>Створено:</strong><br />
-                {new Date(idea.created_at).toLocaleDateString('uk-UA')}
+                {new Date(content.created_at).toLocaleDateString('uk-UA')}
               </p>
               <p className="mb-0">
                 <strong>Оновлено:</strong><br />
-                {new Date(idea.updated_at).toLocaleDateString('uk-UA')}
+                {new Date(content.updated_at).toLocaleDateString('uk-UA')}
               </p>
             </Card.Body>
           </Card>
@@ -355,4 +392,4 @@ function IdeaDetailPage() {
   );
 }
 
-export default IdeaDetailPage;
+export default ContentDetailPage;

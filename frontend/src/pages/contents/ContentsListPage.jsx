@@ -1,14 +1,46 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Container, Row, Col, Card, Badge, Form, InputGroup, Button } from 'react-bootstrap';
-import { FaSearch, FaEye, FaHeart, FaComment } from 'react-icons/fa';
-import { ideasAPI, fieldsAPI } from '../../api';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Container, Row, Col, Card, Badge, Form, InputGroup, Button, Nav } from 'react-bootstrap';
+import { FaSearch, FaEye, FaHeart, FaComment, FaExternalLinkAlt } from 'react-icons/fa';
+import { contentsAPI, fieldsAPI } from '../../api';
 import Loading from '../../components/common/Loading';
 import useTitle from '../../hooks/useTitle';
 
-function IdeasListPage() {
-  useTitle('Ідеї');
-  const [ideas, setIdeas] = useState([]);
+const CONTENT_TYPES = [
+  { value: '', label: 'Всі' },
+  { value: 'idea', label: 'Ідеї' },
+  { value: 'resource', label: 'Ресурси' },
+  { value: 'webinar', label: 'Вебінари' },
+  { value: 'lecture', label: 'Лекції' },
+];
+
+const getContentTypeLabel = (type) => {
+  const labels = {
+    idea: 'Ідея',
+    resource: 'Ресурс',
+    webinar: 'Вебінар',
+    lecture: 'Лекція',
+  };
+  return labels[type] || type;
+};
+
+const getContentTypeVariant = (type) => {
+  const variants = {
+    idea: 'primary',
+    resource: 'success',
+    webinar: 'info',
+    lecture: 'warning',
+  };
+  return variants[type] || 'secondary';
+};
+
+function ContentsListPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const contentType = searchParams.get('type') || '';
+
+  useTitle(contentType ? getContentTypeLabel(contentType) : 'Контент');
+
+  const [contents, setContents] = useState([]);
   const [fields, setFields] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -28,32 +60,41 @@ function IdeasListPage() {
     fetchFields();
   }, []);
 
-  // Завантаження ідей при зміні фільтрів
+  // Завантаження контенту при зміні фільтрів
   useEffect(() => {
-    const fetchIdeas = async () => {
+    const fetchContents = async () => {
       setLoading(true);
       try {
         const params = {};
         if (search) params.search = search;
         if (selectedField) params.scientific_field__slug = selectedField;
         if (status) params.status = status;
+        if (contentType) params.content_type = contentType;
 
-        const response = await ideasAPI.getList(params);
-        setIdeas(response.data.results || response.data);
+        const response = await contentsAPI.getList(params);
+        setContents(response.data.results || response.data);
       } catch (error) {
-        console.error('Error loading ideas:', error);
+        console.error('Error loading contents:', error);
       }
       setLoading(false);
     };
-    fetchIdeas();
-  }, [selectedField, status, search]);
+    fetchContents();
+  }, [selectedField, status, search, contentType]);
 
   const handleSearch = (e) => {
     e.preventDefault();
     // Пошук вже відбувається через useEffect при зміні search
   };
 
-  const getStatusBadge = (ideaStatus) => {
+  const handleTypeChange = (type) => {
+    if (type) {
+      setSearchParams({ type });
+    } else {
+      setSearchParams({});
+    }
+  };
+
+  const getStatusBadge = (contentStatus) => {
     const variants = {
       idea: 'primary',
       in_progress: 'warning',
@@ -64,17 +105,32 @@ function IdeasListPage() {
       in_progress: 'У процесі',
       completed: 'Завершено',
     };
-    return <Badge bg={variants[ideaStatus]}>{labels[ideaStatus]}</Badge>;
+    return <Badge bg={variants[contentStatus]}>{labels[contentStatus]}</Badge>;
   };
 
   return (
     <Container className="py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1>Наукові ідеї</h1>
-        <Button as={Link} to="/ideas/create" variant="primary">
-          + Нова ідея
+        <h1>{contentType ? getContentTypeLabel(contentType) : 'Науковий контент'}</h1>
+        <Button as={Link} to="/contents/create" variant="primary">
+          + Додати
         </Button>
       </div>
+
+      {/* Табки типів контенту */}
+      <Nav variant="tabs" className="mb-4">
+        {CONTENT_TYPES.map((type) => (
+          <Nav.Item key={type.value}>
+            <Nav.Link
+              active={contentType === type.value}
+              onClick={() => handleTypeChange(type.value)}
+              style={{ cursor: 'pointer' }}
+            >
+              {type.label}
+            </Nav.Link>
+          </Nav.Item>
+        ))}
+      </Nav>
 
       {/* Фільтри */}
       <Card className="mb-4">
@@ -123,52 +179,68 @@ function IdeasListPage() {
         </Card.Body>
       </Card>
 
-      {/* Список ідей */}
+      {/* Список контенту */}
       {loading ? (
         <Loading />
-      ) : ideas.length === 0 ? (
+      ) : contents.length === 0 ? (
         <Card className="text-center py-5">
           <Card.Body>
-            <p className="text-muted mb-0">Ідеї не знайдено</p>
+            <p className="text-muted mb-0">Контент не знайдено</p>
           </Card.Body>
         </Card>
       ) : (
         <Row>
-          {ideas.map((idea) => (
-            <Col key={idea.id} md={6} lg={4} className="mb-4">
+          {contents.map((content) => (
+            <Col key={content.id} md={6} lg={4} className="mb-4">
               <Card className="h-100">
                 <Card.Body>
                   <div className="d-flex justify-content-between mb-2">
-                    {getStatusBadge(idea.status)}
-                    {idea.is_open_for_collaboration && (
+                    <div>
+                      <Badge bg={getContentTypeVariant(content.content_type)} className="me-2">
+                        {getContentTypeLabel(content.content_type)}
+                      </Badge>
+                      {getStatusBadge(content.status)}
+                    </div>
+                    {content.is_open_for_collaboration && (
                       <Badge bg="info">Шукаю співпрацю</Badge>
                     )}
                   </div>
                   <Card.Title>
-                    <Link to={`/ideas/${idea.slug}`} className="text-decoration-none">
-                      {idea.title}
+                    <Link to={`/contents/${content.slug}`} className="text-decoration-none">
+                      {content.title}
                     </Link>
+                    {content.link && (
+                      <a
+                        href={content.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ms-2 text-muted"
+                        title="Зовнішнє посилання"
+                      >
+                        <FaExternalLinkAlt size={12} />
+                      </a>
+                    )}
                   </Card.Title>
-                  {idea.scientific_fields && idea.scientific_fields.length > 0 && (
+                  {content.scientific_fields && content.scientific_fields.length > 0 && (
                     <small className="text-muted d-block mb-2">
-                      {idea.scientific_fields.map((f) => f.name).join(', ')}
+                      {content.scientific_fields.map((f) => f.name).join(', ')}
                     </small>
                   )}
                   <div className="d-flex align-items-center text-muted small">
-                    <Link to={`/users/${idea.author.id}`} className="text-decoration-none me-3">
-                      {idea.author.full_name || idea.author.username}
+                    <Link to={`/users/${content.author.id}`} className="text-decoration-none me-3">
+                      {content.author.full_name || content.author.username}
                     </Link>
                     <span className="me-3">
                       <FaEye className="me-1" />
-                      {idea.views_count}
+                      {content.views_count}
                     </span>
                     <span className="me-3">
                       <FaHeart className="me-1" />
-                      {idea.likes_count}
+                      {content.likes_count}
                     </span>
                     <span>
                       <FaComment className="me-1" />
-                      {idea.comments_count}
+                      {content.comments_count}
                     </span>
                   </div>
                 </Card.Body>
@@ -181,4 +253,4 @@ function IdeasListPage() {
   );
 }
 
-export default IdeasListPage;
+export default ContentsListPage;

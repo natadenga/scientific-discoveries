@@ -1,4 +1,4 @@
 export { default as api } from './axios';
 export { authAPI } from './auth';
-export { ideasAPI, fieldsAPI } from './ideas';
+export { contentsAPI, fieldsAPI } from './contents';
 export { usersAPI, institutionsAPI } from './users';

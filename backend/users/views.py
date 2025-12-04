@@ -89,14 +89,14 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response({'status': 'followed'})
 
     @action(detail=True, methods=['get'])
-    def ideas(self, request, pk=None):
-        """GET /api/users/{id}/ideas/ - ідеї користувача"""
-        from ideas.models import Idea
-        from ideas.serializers import IdeaListSerializer
+    def contents(self, request, pk=None):
+        """GET /api/users/{id}/contents/ - контент користувача"""
+        from contents.models import Content
+        from contents.serializers import ContentListSerializer
 
         user = self.get_object()
-        ideas = Idea.objects.filter(author=user, is_public=True)
-        serializer = IdeaListSerializer(ideas, many=True)
+        contents = Content.objects.filter(author=user, is_public=True)
+        serializer = ContentListSerializer(contents, many=True)
         return Response(serializer.data)
 
     @action(detail=True, methods=['get'])

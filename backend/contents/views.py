@@ -4,11 +4,11 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 
-from .models import Idea, ScientificField, Comment, Like
+from .models import Content, ScientificField, Comment, Like
 from .serializers import (
-    IdeaListSerializer,
-    IdeaDetailSerializer,
-    IdeaCreateSerializer,
+    ContentListSerializer,
+    ContentDetailSerializer,
+    ContentCreateSerializer,
     ScientificFieldSerializer,
     CommentSerializer,
     CommentCreateSerializer
@@ -30,32 +30,32 @@ class ScientificFieldViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet для галузей науки (тільки читання)
 
-    GET /api/fields/ - список галузей
-    GET /api/fields/{slug}/ - деталі галузі
+    GET /api/contents/fields/ - список галузей
+    GET /api/contents/fields/{slug}/ - деталі галузі
     """
     queryset = ScientificField.objects.all()
     serializer_class = ScientificFieldSerializer
     lookup_field = 'slug'  # Використовуємо slug замість id
 
 
-class IdeaViewSet(viewsets.ModelViewSet):
+class ContentViewSet(viewsets.ModelViewSet):
     """
-    ViewSet для ідей
+    ViewSet для контенту (ідеї, ресурси, вебінари, лекції)
 
-    GET /api/ideas/ - список ідей (з фільтрацією)
-    POST /api/ideas/ - створити ідею
-    GET /api/ideas/{slug}/ - деталі ідеї
-    PATCH /api/ideas/{slug}/ - оновити ідею
-    DELETE /api/ideas/{slug}/ - видалити ідею
-    POST /api/ideas/{slug}/like/ - лайкнути/анлайкнути
-    POST /api/ideas/{slug}/comments/ - додати коментар
+    GET /api/contents/ - список (з фільтрацією по content_type: idea/resource/webinar/lecture)
+    POST /api/contents/ - створити
+    GET /api/contents/{slug}/ - деталі
+    PATCH /api/contents/{slug}/ - оновити
+    DELETE /api/contents/{slug}/ - видалити
+    POST /api/contents/{slug}/like/ - лайкнути/анлайкнути
+    POST /api/contents/{slug}/comments/ - додати коментар
     """
-    queryset = Idea.objects.filter(is_public=True)
+    queryset = Content.objects.filter(is_public=True)
     lookup_field = 'slug'
 
     # Фільтрація та пошук
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['status', 'author', 'is_open_for_collaboration']
+    filterset_fields = ['status', 'author', 'is_open_for_collaboration', 'content_type']
     search_fields = ['title', 'description', 'keywords']
     ordering_fields = ['created_at', 'views_count']
     ordering = ['-created_at']  # За замовчуванням - нові спочатку
@@ -65,7 +65,7 @@ class IdeaViewSet(viewsets.ModelViewSet):
         if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
         elif self.action in ['create', 'like', 'comments']:
-            # Створення ідеї, лайки та коментарі - тільки авторизовані
+            # Створення контенту, лайки та коментарі - тільки авторизовані
             return [permissions.IsAuthenticated()]
         else:
             # Редагування/видалення - тільки автор
@@ -74,22 +74,22 @@ class IdeaViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         """Різні серіалізатори для різних дій"""
         if self.action == 'list':
-            return IdeaListSerializer
+            return ContentListSerializer
         elif self.action == 'retrieve':
-            return IdeaDetailSerializer
+            return ContentDetailSerializer
         elif self.action in ['create', 'update', 'partial_update']:
-            return IdeaCreateSerializer
+            return ContentCreateSerializer
         elif self.action == 'add_comment':
             return CommentCreateSerializer
-        return IdeaListSerializer
+        return ContentListSerializer
 
     def get_queryset(self):
-        """Фільтруємо ідеї"""
-        queryset = Idea.objects.filter(is_public=True)
+        """Фільтруємо контент"""
+        queryset = Content.objects.filter(is_public=True)
 
-        # Якщо користувач авторизований - показуємо і його приватні ідеї
+        # Якщо користувач авторизований - показуємо і його приватний контент
         if self.request.user.is_authenticated:
-            queryset = Idea.objects.filter(
+            queryset = Content.objects.filter(
                 Q(is_public=True) | Q(author=self.request.user)
             )
 
@@ -111,42 +111,42 @@ class IdeaViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def like(self, request, slug=None):
         """
-        POST /api/ideas/{slug}/like/ - лайкнути/анлайкнути ідею (toggle)
+        POST /api/contents/{slug}/like/ - лайкнути/анлайкнути контент (toggle)
         """
-        idea = self.get_object()
-        like, created = Like.objects.get_or_create(idea=idea, user=request.user)
+        content = self.get_object()
+        like, created = Like.objects.get_or_create(content=content, user=request.user)
 
         if not created:
             # Лайк вже існує - видаляємо (анлайк)
             like.delete()
             return Response({
                 'status': 'unliked',
-                'likes_count': idea.likes.count()
+                'likes_count': content.likes.count()
             })
 
         return Response({
             'status': 'liked',
-            'likes_count': idea.likes.count()
+            'likes_count': content.likes.count()
         })
 
     @action(detail=True, methods=['get', 'post'], url_path='comments')
     def comments(self, request, slug=None):
         """
-        GET /api/ideas/{slug}/comments/ - список коментарів
-        POST /api/ideas/{slug}/comments/ - додати коментар
+        GET /api/contents/{slug}/comments/ - список коментарів
+        POST /api/contents/{slug}/comments/ - додати коментар
         """
-        idea = self.get_object()
+        content = self.get_object()
 
         if request.method == 'GET':
             # Повертаємо тільки коментарі верхнього рівня
-            comments = idea.comments.filter(parent__isnull=True)
+            comments = content.comments.filter(parent__isnull=True)
             serializer = CommentSerializer(comments, many=True)
             return Response(serializer.data)
 
         elif request.method == 'POST':
             serializer = CommentCreateSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            serializer.save(idea=idea, author=request.user)
+            serializer.save(content=content, author=request.user)
 
             # Повертаємо повний коментар
             comment = Comment.objects.get(pk=serializer.instance.pk)
@@ -158,10 +158,16 @@ class IdeaViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def my(self, request):
         """
-        GET /api/ideas/my/ - мої ідеї
+        GET /api/contents/my/ - мій контент (з опціональною фільтрацією по content_type)
         """
-        ideas = Idea.objects.filter(author=request.user)
-        serializer = IdeaListSerializer(ideas, many=True)
+        contents = Content.objects.filter(author=request.user)
+
+        # Опціональна фільтрація по типу контенту
+        content_type = request.query_params.get('content_type')
+        if content_type:
+            contents = contents.filter(content_type=content_type)
+
+        serializer = ContentListSerializer(contents, many=True)
         return Response(serializer.data)
 
 
@@ -169,7 +175,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     """
     ViewSet для коментарів (видалення)
 
-    DELETE /api/comments/{id}/ - видалити коментар
+    DELETE /api/contents/comments/{id}/ - видалити коментар
     """
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer

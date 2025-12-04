@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ScientificField, Idea, Comment, Like
+from .models import ScientificField, Content, Comment, Like
 
 
 @admin.register(ScientificField)
@@ -9,10 +9,10 @@ class ScientificFieldAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
-@admin.register(Idea)
-class IdeaAdmin(admin.ModelAdmin):
-    list_display = ('title', 'author', 'status', 'views_count', 'created_at')
-    list_filter = ('status', 'scientific_fields', 'is_public', 'created_at')
+@admin.register(Content)
+class ContentAdmin(admin.ModelAdmin):
+    list_display = ('title', 'content_type', 'author', 'status', 'views_count', 'created_at')
+    list_filter = ('content_type', 'status', 'scientific_fields', 'is_public', 'created_at')
     search_fields = ('title', 'description', 'keywords')
     prepopulated_fields = {'slug': ('title',)}
     readonly_fields = ('views_count', 'created_at', 'updated_at')
@@ -21,12 +21,12 @@ class IdeaAdmin(admin.ModelAdmin):
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ('author', 'idea', 'parent', 'created_at')
+    list_display = ('author', 'content', 'parent', 'created_at')
     list_filter = ('created_at',)
-    search_fields = ('content', 'author__email')
+    search_fields = ('text', 'author__email')
 
 
 @admin.register(Like)
 class LikeAdmin(admin.ModelAdmin):
-    list_display = ('user', 'idea', 'created_at')
+    list_display = ('user', 'content', 'created_at')
     list_filter = ('created_at',)

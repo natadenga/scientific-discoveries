@@ -13,7 +13,7 @@ router.register('', UserViewSet, basename='user')
 # DELETE /api/users/{id}/      → destroy
 # GET    /api/users/me/        → @action me
 # POST   /api/users/{id}/follow/    → @action follow
-# GET    /api/users/{id}/ideas/     → @action ideas
+# GET    /api/users/{id}/contents/  → @action contents
 # GET    /api/users/{id}/followers/ → @action followers
 # GET    /api/users/{id}/following/ → @action following
 

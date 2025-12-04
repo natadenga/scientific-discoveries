@@ -11,10 +11,10 @@ import Loading from './components/common/Loading';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
-import IdeasListPage from './pages/ideas/IdeasListPage';
-import IdeaDetailPage from './pages/ideas/IdeaDetailPage';
-import IdeaCreatePage from './pages/ideas/IdeaCreatePage';
-import IdeaEditPage from './pages/ideas/IdeaEditPage';
+import ContentsListPage from './pages/contents/ContentsListPage';
+import ContentDetailPage from './pages/contents/ContentDetailPage';
+import ContentCreatePage from './pages/contents/ContentCreatePage';
+import ContentEditPage from './pages/contents/ContentEditPage';
 import UsersListPage from './pages/users/UsersListPage';
 import UserDetailPage from './pages/users/UserDetailPage';
 import ProfilePage from './pages/profile/ProfilePage';
@@ -37,21 +37,21 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/ideas" element={<IdeasListPage />} />
-        <Route path="/ideas/:slug" element={<IdeaDetailPage />} />
+        <Route path="/contents" element={<ContentsListPage />} />
+        <Route path="/contents/:slug" element={<ContentDetailPage />} />
         <Route
-          path="/ideas/:slug/edit"
+          path="/contents/:slug/edit"
           element={
             <ProtectedRoute>
-              <IdeaEditPage />
+              <ContentEditPage />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/ideas/create"
+          path="/contents/create"
           element={
             <ProtectedRoute>
-              <IdeaCreatePage />
+              <ContentCreatePage />
             </ProtectedRoute>
           }
         />

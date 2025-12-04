@@ -1,16 +1,28 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Container, Card, Form, Button, Alert, Row, Col } from 'react-bootstrap';
-import { ideasAPI, fieldsAPI } from '../../api';
+import { contentsAPI, fieldsAPI } from '../../api';
 import useTitle from '../../hooks/useTitle';
 
-function IdeaCreatePage() {
-  useTitle('Нова ідея');
+const CONTENT_TYPES = [
+  { value: 'idea', label: 'Ідея' },
+  { value: 'resource', label: 'Корисний ресурс' },
+  { value: 'webinar', label: 'Вебінар' },
+  { value: 'lecture', label: 'Гостьова лекція' },
+];
+
+function ContentCreatePage() {
+  const [searchParams] = useSearchParams();
+  const initialType = searchParams.get('type') || 'idea';
+
+  useTitle('Новий контент');
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
+    content_type: initialType,
     title: '',
     description: '',
+    link: '',
     scientific_field_ids: [],
     keywords: '',
     status: 'idea',
@@ -63,8 +75,8 @@ function IdeaCreatePage() {
         delete data.scientific_field_ids;
       }
 
-      const response = await ideasAPI.create(data);
-      navigate(`/ideas/${response.data.slug || response.data.id}`);
+      const response = await contentsAPI.create(data);
+      navigate(`/contents/${response.data.slug || response.data.id}`);
     } catch (err) {
       if (typeof err.response?.data === 'object') {
         const messages = Object.entries(err.response.data)
@@ -72,11 +84,18 @@ function IdeaCreatePage() {
           .join('\n');
         setError(messages);
       } else {
-        setError('Помилка створення ідеї');
+        setError('Помилка створення');
       }
     }
 
     setLoading(false);
+  };
+
+  const requiresLink = ['resource', 'webinar', 'lecture'].includes(formData.content_type);
+
+  const getTypeLabel = () => {
+    const type = CONTENT_TYPES.find((t) => t.value === formData.content_type);
+    return type?.label || 'Контент';
   };
 
   return (
@@ -85,12 +104,27 @@ function IdeaCreatePage() {
         <Col lg={8}>
           <Card>
             <Card.Header>
-              <h4 className="mb-0">Нова ідея</h4>
+              <h4 className="mb-0">Новий контент</h4>
             </Card.Header>
             <Card.Body>
               {error && <Alert variant="danger" style={{ whiteSpace: 'pre-line' }}>{error}</Alert>}
 
               <Form onSubmit={handleSubmit}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Тип контенту *</Form.Label>
+                  <Form.Select
+                    name="content_type"
+                    value={formData.content_type}
+                    onChange={handleChange}
+                  >
+                    {CONTENT_TYPES.map((type) => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+
                 <Form.Group className="mb-3">
                   <Form.Label>Назва *</Form.Label>
                   <Form.Control
@@ -98,10 +132,40 @@ function IdeaCreatePage() {
                     name="title"
                     value={formData.title}
                     onChange={handleChange}
-                    placeholder="Введіть назву вашої ідеї"
+                    placeholder={`Введіть назву`}
                     required
                   />
                 </Form.Group>
+
+                {requiresLink && (
+                  <Form.Group className="mb-3">
+                    <Form.Label>Посилання *</Form.Label>
+                    <Form.Control
+                      type="url"
+                      name="link"
+                      value={formData.link}
+                      onChange={handleChange}
+                      placeholder="https://..."
+                      required={requiresLink}
+                    />
+                    <Form.Text className="text-muted">
+                      Обов&apos;язкове для {getTypeLabel().toLowerCase()}
+                    </Form.Text>
+                  </Form.Group>
+                )}
+
+                {!requiresLink && (
+                  <Form.Group className="mb-3">
+                    <Form.Label>Посилання (опціонально)</Form.Label>
+                    <Form.Control
+                      type="url"
+                      name="link"
+                      value={formData.link}
+                      onChange={handleChange}
+                      placeholder="https://..."
+                    />
+                  </Form.Group>
+                )}
 
                 <Form.Group className="mb-3">
                   <Form.Label>Опис *</Form.Label>
@@ -111,7 +175,7 @@ function IdeaCreatePage() {
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
-                    placeholder="Детально опишіть вашу ідею..."
+                    placeholder="Детально опишіть..."
                     required
                   />
                 </Form.Group>
@@ -168,7 +232,7 @@ function IdeaCreatePage() {
                     name="is_public"
                     checked={formData.is_public}
                     onChange={handleChange}
-                    label="Публічна ідея (видима всім)"
+                    label="Публічний (видимий всім)"
                   />
                 </Form.Group>
 
@@ -184,7 +248,7 @@ function IdeaCreatePage() {
 
                 <div className="d-flex gap-2">
                   <Button type="submit" variant="primary" disabled={loading}>
-                    {loading ? 'Створення...' : 'Створити ідею'}
+                    {loading ? 'Створення...' : 'Створити'}
                   </Button>
                   <Button variant="outline-secondary" onClick={() => navigate(-1)}>
                     Скасувати
@@ -199,4 +263,4 @@ function IdeaCreatePage() {
   );
 }
 
-export default IdeaCreatePage;
+export default ContentCreatePage;

@@ -27,7 +27,7 @@ urlpatterns = [
     # Apps
     path('api/', include(router.urls)),
     path('api/users/', include('users.urls')),
-    path('api/ideas/', include('ideas.urls')),
+    path('api/contents/', include('contents.urls')),
 ]
 
 # Static and media files

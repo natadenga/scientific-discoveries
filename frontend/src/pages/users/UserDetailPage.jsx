@@ -31,7 +31,7 @@ function UserDetailPage() {
   const { user: currentUser, isAuthenticated } = useAuthStore();
 
   const [user, setUser] = useState(null);
-  const [ideas, setIdeas] = useState([]);
+  const [contents, setContents] = useState([]);
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -45,15 +45,15 @@ function UserDetailPage() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const [userResponse, ideasResponse, followersResponse, followingResponse] = await Promise.all([
+        const [userResponse, contentsResponse, followersResponse, followingResponse] = await Promise.all([
           usersAPI.getById(id),
-          usersAPI.getIdeas(id),
+          usersAPI.getContents(id),
           usersAPI.getFollowers(id),
           usersAPI.getFollowing(id),
         ]);
 
         setUser(userResponse.data);
-        setIdeas(ideasResponse.data.results || ideasResponse.data);
+        setContents(contentsResponse.data.results || contentsResponse.data);
         setFollowers(followersResponse.data.results || followersResponse.data);
         setFollowing(followingResponse.data.results || followingResponse.data);
 
@@ -262,24 +262,24 @@ function UserDetailPage() {
         </Col>
 
         <Col lg={8}>
-          <h5 className="mb-3">Ідеї користувача</h5>
-          {ideas.length === 0 ? (
+          <h5 className="mb-3">Контент користувача</h5>
+          {contents.length === 0 ? (
             <Card>
               <Card.Body className="text-center text-muted">
-                Користувач ще не опублікував ідей
+                Користувач ще не опублікував контент
               </Card.Body>
             </Card>
           ) : (
-            ideas.map((idea) => (
-              <Card key={idea.id} className="mb-3">
+            contents.map((content) => (
+              <Card key={content.id} className="mb-3">
                 <Card.Body>
                   <Card.Title>
-                    <Link to={`/ideas/${idea.slug}`} className="text-decoration-none">
-                      {idea.title}
+                    <Link to={`/contents/${content.slug}`} className="text-decoration-none">
+                      {content.title}
                     </Link>
                   </Card.Title>
-                  {idea.scientific_fields && idea.scientific_fields.length > 0 && (
-                    <small className="text-muted">{idea.scientific_fields.map((f) => f.name).join(', ')}</small>
+                  {content.scientific_fields && content.scientific_fields.length > 0 && (
+                    <small className="text-muted">{content.scientific_fields.map((f) => f.name).join(', ')}</small>
                   )}
                 </Card.Body>
               </Card>

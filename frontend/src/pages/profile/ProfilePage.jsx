@@ -3,7 +3,7 @@ import { Container, Row, Col, Card, Form, Button, Alert, Image, Tab, Tabs, Modal
 import { Link } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
 import { usersAPI, institutionsAPI } from '../../api/users';
-import { ideasAPI } from '../../api/ideas';
+import { contentsAPI } from '../../api/contents';
 import useTitle from '../../hooks/useTitle';
 
 function ProfilePage() {
@@ -25,7 +25,7 @@ function ProfilePage() {
     web_of_science: '',
     scopus: '',
   });
-  const [myIdeas, setMyIdeas] = useState([]);
+  const [myContents, setMyContents] = useState([]);
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
   const [showFollowersModal, setShowFollowersModal] = useState(false);
@@ -88,15 +88,15 @@ function ProfilePage() {
   };
 
   useEffect(() => {
-    const fetchMyIdeas = async () => {
+    const fetchMyContents = async () => {
       try {
-        const response = await ideasAPI.getMy();
-        setMyIdeas(response.data.results || response.data);
+        const response = await contentsAPI.getMy();
+        setMyContents(response.data.results || response.data);
       } catch (err) {
-        console.error('Error fetching ideas:', err);
+        console.error('Error fetching contents:', err);
       }
     };
-    fetchMyIdeas();
+    fetchMyContents();
   }, []);
 
   useEffect(() => {
@@ -439,37 +439,37 @@ function ProfilePage() {
               </Card>
             </Tab>
 
-            <Tab eventKey="ideas" title={`Мої ідеї (${myIdeas.length})`}>
+            <Tab eventKey="contents" title={`Мій контент (${myContents.length})`}>
               <Card>
                 <Card.Body>
-                  {myIdeas.length === 0 ? (
+                  {myContents.length === 0 ? (
                     <div className="text-center py-4">
-                      <p className="text-muted">У вас ще немає ідей</p>
-                      <Link to="/ideas/create" className="btn btn-primary">
-                        Створити першу ідею
+                      <p className="text-muted">У вас ще немає контенту</p>
+                      <Link to="/contents/create" className="btn btn-primary">
+                        Створити
                       </Link>
                     </div>
                   ) : (
                     <div className="list-group list-group-flush">
-                      {myIdeas.map((idea) => (
+                      {myContents.map((content) => (
                         <Link
-                          key={idea.id}
-                          to={`/ideas/${idea.slug}`}
+                          key={content.id}
+                          to={`/contents/${content.slug}`}
                           className="list-group-item list-group-item-action"
                         >
                           <div className="d-flex justify-content-between align-items-center">
                             <div>
-                              <h6 className="mb-1">{idea.title}</h6>
+                              <h6 className="mb-1">{content.title}</h6>
                               <small className="text-muted">
-                                {idea.views_count} переглядів • {idea.likes_count} лайків
+                                {content.views_count} переглядів • {content.likes_count} лайків
                               </small>
                             </div>
                             <span className={`badge bg-${
-                              idea.status === 'completed' ? 'success' :
-                              idea.status === 'in_progress' ? 'warning' : 'secondary'
+                              content.status === 'completed' ? 'success' :
+                              content.status === 'in_progress' ? 'warning' : 'secondary'
                             }`}>
-                              {idea.status === 'completed' ? 'Завершено' :
-                               idea.status === 'in_progress' ? 'У процесі' : 'Ідея'}
+                              {content.status === 'completed' ? 'Завершено' :
+                               content.status === 'in_progress' ? 'У процесі' : 'Ідея'}
                             </span>
                           </div>
                         </Link>

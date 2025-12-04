@@ -1,19 +1,19 @@
 from rest_framework import serializers
-from .models import Idea, ScientificField, Comment, Like
+from .models import Content, ScientificField, Comment, Like
 from users.serializers import UserShortSerializer
 
 
 class ScientificFieldSerializer(serializers.ModelSerializer):
     """Серіалізатор для галузей науки"""
-    ideas_count = serializers.SerializerMethodField()
+    contents_count = serializers.SerializerMethodField()
 
     class Meta:
         model = ScientificField
-        fields = ['id', 'name', 'slug', 'description', 'ideas_count']
+        fields = ['id', 'name', 'slug', 'description', 'contents_count']
         read_only_fields = ['slug']
 
-    def get_ideas_count(self, obj) -> int:
-        return obj.ideas.count()
+    def get_contents_count(self, obj) -> int:
+        return obj.contents.count()
 
 
 class ReplySerializer(serializers.ModelSerializer):
@@ -22,7 +22,7 @@ class ReplySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ['id', 'author', 'content', 'created_at']
+        fields = ['id', 'author', 'text', 'created_at']
         read_only_fields = ['id', 'author', 'created_at']
 
 
@@ -34,7 +34,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ['id', 'author', 'content', 'created_at', 'replies', 'replies_count']
+        fields = ['id', 'author', 'text', 'created_at', 'replies', 'replies_count']
         read_only_fields = ['id', 'author', 'created_at']
 
     def get_replies_count(self, obj) -> int:
@@ -53,7 +53,7 @@ class CommentCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ['content', 'parent_id']
+        fields = ['text', 'parent_id']
 
     def validate_parent_id(self, value):
         """Перевіряємо що батьківський коментар не є відповіддю (глибина 1)"""
@@ -64,17 +64,17 @@ class CommentCreateSerializer(serializers.ModelSerializer):
         return value
 
 
-class IdeaListSerializer(serializers.ModelSerializer):
-    """Серіалізатор для списку ідей (коротка версія)"""
+class ContentListSerializer(serializers.ModelSerializer):
+    """Серіалізатор для списку контенту (коротка версія)"""
     author = UserShortSerializer(read_only=True)
     scientific_fields = ScientificFieldSerializer(many=True, read_only=True)
     comments_count = serializers.SerializerMethodField()
     likes_count = serializers.SerializerMethodField()
 
     class Meta:
-        model = Idea
+        model = Content
         fields = [
-            'id', 'title', 'slug', 'author', 'scientific_fields',
+            'id', 'content_type', 'title', 'slug', 'link', 'author', 'scientific_fields',
             'status', 'is_open_for_collaboration',
             'views_count', 'likes_count', 'comments_count',
             'created_at'
@@ -87,8 +87,8 @@ class IdeaListSerializer(serializers.ModelSerializer):
         return obj.likes.count()
 
 
-class IdeaDetailSerializer(serializers.ModelSerializer):
-    """Серіалізатор для детального перегляду ідеї"""
+class ContentDetailSerializer(serializers.ModelSerializer):
+    """Серіалізатор для детального перегляду контенту"""
     author = UserShortSerializer(read_only=True)
     scientific_fields = ScientificFieldSerializer(many=True, read_only=True)
     comments = serializers.SerializerMethodField()
@@ -97,9 +97,9 @@ class IdeaDetailSerializer(serializers.ModelSerializer):
     liked = serializers.SerializerMethodField()
 
     class Meta:
-        model = Idea
+        model = Content
         fields = [
-            'id', 'title', 'slug', 'description', 'author',
+            'id', 'content_type', 'title', 'slug', 'description', 'link', 'author',
             'scientific_fields', 'keywords', 'status',
             'is_public', 'is_open_for_collaboration',
             'views_count', 'likes_count', 'liked',
@@ -119,15 +119,15 @@ class IdeaDetailSerializer(serializers.ModelSerializer):
         return obj.likes.count()
 
     def get_liked(self, obj) -> bool:
-        """Перевіряємо чи поточний користувач лайкнув ідею"""
+        """Перевіряємо чи поточний користувач лайкнув контент"""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return obj.likes.filter(user=request.user).exists()
         return False
 
 
-class IdeaCreateSerializer(serializers.ModelSerializer):
-    """Серіалізатор для створення/оновлення ідеї"""
+class ContentCreateSerializer(serializers.ModelSerializer):
+    """Серіалізатор для створення/оновлення контенту"""
     scientific_field_ids = serializers.PrimaryKeyRelatedField(
         queryset=ScientificField.objects.all(),
         many=True,
@@ -136,21 +136,33 @@ class IdeaCreateSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = Idea
+        model = Content
         fields = [
-            'id', 'slug', 'title', 'description', 'scientific_field_ids',
-            'keywords', 'status', 'is_public', 'is_open_for_collaboration'
+            'id', 'slug', 'content_type', 'title', 'description', 'link',
+            'scientific_field_ids', 'keywords', 'status',
+            'is_public', 'is_open_for_collaboration'
         ]
         read_only_fields = ['id', 'slug']
+
+    def validate(self, data):
+        """Валідація: для ресурсів/вебінарів/лекцій посилання обов'язкове"""
+        content_type = data.get('content_type', 'idea')
+        link = data.get('link', '')
+
+        if content_type in ['resource', 'webinar', 'lecture'] and not link:
+            raise serializers.ValidationError({
+                'link': 'Посилання обов\'язкове для цього типу контенту'
+            })
+        return data
 
     def create(self, validated_data):
         """Автоматично додаємо автора при створенні"""
         scientific_fields = validated_data.pop('scientific_field_ids', [])
         validated_data['author'] = self.context['request'].user
-        idea = super().create(validated_data)
+        content = super().create(validated_data)
         if scientific_fields:
-            idea.scientific_fields.set(scientific_fields)
-        return idea
+            content.scientific_fields.set(scientific_fields)
+        return content
 
     def update(self, instance, validated_data):
         scientific_fields = validated_data.pop('scientific_field_ids', None)

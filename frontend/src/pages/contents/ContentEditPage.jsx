@@ -1,20 +1,29 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Card, Form, Button, Alert, Row, Col } from 'react-bootstrap';
-import { ideasAPI, fieldsAPI } from '../../api';
+import { contentsAPI, fieldsAPI } from '../../api';
 import useAuthStore from '../../store/authStore';
 import Loading from '../../components/common/Loading';
 import useTitle from '../../hooks/useTitle';
 
-function IdeaEditPage() {
-  useTitle('Редагування ідеї');
+const CONTENT_TYPES = [
+  { value: 'idea', label: 'Ідея' },
+  { value: 'resource', label: 'Корисний ресурс' },
+  { value: 'webinar', label: 'Вебінар' },
+  { value: 'lecture', label: 'Гостьова лекція' },
+];
+
+function ContentEditPage() {
+  useTitle('Редагування');
   const { slug } = useParams();
   const navigate = useNavigate();
   const { user } = useAuthStore();
 
   const [formData, setFormData] = useState({
+    content_type: 'idea',
     title: '',
     description: '',
+    link: '',
     scientific_field_ids: [],
     keywords: '',
     status: 'idea',
@@ -29,32 +38,34 @@ function IdeaEditPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [ideaResponse, fieldsResponse] = await Promise.all([
-          ideasAPI.getBySlug(slug),
+        const [contentResponse, fieldsResponse] = await Promise.all([
+          contentsAPI.getBySlug(slug),
           fieldsAPI.getList(),
         ]);
 
-        const idea = ideaResponse.data;
+        const content = contentResponse.data;
 
         // Перевіряємо чи користувач є автором
-        if (user?.id !== idea.author.id) {
-          navigate(`/ideas/${slug}`);
+        if (user?.id !== content.author.id) {
+          navigate(`/contents/${slug}`);
           return;
         }
 
         setFormData({
-          title: idea.title,
-          description: idea.description,
-          scientific_field_ids: idea.scientific_fields?.map((f) => f.id) || [],
-          keywords: idea.keywords || '',
-          status: idea.status,
-          is_public: idea.is_public,
-          is_open_for_collaboration: idea.is_open_for_collaboration,
+          content_type: content.content_type,
+          title: content.title,
+          description: content.description,
+          link: content.link || '',
+          scientific_field_ids: content.scientific_fields?.map((f) => f.id) || [],
+          keywords: content.keywords || '',
+          status: content.status,
+          is_public: content.is_public,
+          is_open_for_collaboration: content.is_open_for_collaboration,
         });
 
         setFields(fieldsResponse.data.results || fieldsResponse.data);
       } catch (err) {
-        setError('Не вдалося завантажити ідею');
+        setError('Не вдалося завантажити контент');
         console.error(err);
       }
       setLoading(false);
@@ -93,8 +104,8 @@ function IdeaEditPage() {
         delete data.scientific_field_ids;
       }
 
-      const response = await ideasAPI.update(slug, data);
-      navigate(`/ideas/${response.data.slug || slug}`);
+      const response = await contentsAPI.update(slug, data);
+      navigate(`/contents/${response.data.slug || slug}`);
     } catch (err) {
       if (typeof err.response?.data === 'object') {
         const messages = Object.entries(err.response.data)
@@ -102,11 +113,18 @@ function IdeaEditPage() {
           .join('\n');
         setError(messages);
       } else {
-        setError('Помилка оновлення ідеї');
+        setError('Помилка оновлення');
       }
     }
 
     setSaving(false);
+  };
+
+  const requiresLink = ['resource', 'webinar', 'lecture'].includes(formData.content_type);
+
+  const getTypeLabel = () => {
+    const type = CONTENT_TYPES.find((t) => t.value === formData.content_type);
+    return type?.label || 'Контент';
   };
 
   if (loading) return <Loading />;
@@ -117,12 +135,27 @@ function IdeaEditPage() {
         <Col lg={8}>
           <Card>
             <Card.Header>
-              <h4 className="mb-0">Редагування ідеї</h4>
+              <h4 className="mb-0">Редагування</h4>
             </Card.Header>
             <Card.Body>
               {error && <Alert variant="danger" style={{ whiteSpace: 'pre-line' }}>{error}</Alert>}
 
               <Form onSubmit={handleSubmit}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Тип контенту *</Form.Label>
+                  <Form.Select
+                    name="content_type"
+                    value={formData.content_type}
+                    onChange={handleChange}
+                  >
+                    {CONTENT_TYPES.map((type) => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+
                 <Form.Group className="mb-3">
                   <Form.Label>Назва *</Form.Label>
                   <Form.Control
@@ -130,10 +163,40 @@ function IdeaEditPage() {
                     name="title"
                     value={formData.title}
                     onChange={handleChange}
-                    placeholder="Введіть назву вашої ідеї"
+                    placeholder="Введіть назву"
                     required
                   />
                 </Form.Group>
+
+                {requiresLink && (
+                  <Form.Group className="mb-3">
+                    <Form.Label>Посилання *</Form.Label>
+                    <Form.Control
+                      type="url"
+                      name="link"
+                      value={formData.link}
+                      onChange={handleChange}
+                      placeholder="https://..."
+                      required={requiresLink}
+                    />
+                    <Form.Text className="text-muted">
+                      Обов&apos;язкове для {getTypeLabel().toLowerCase()}
+                    </Form.Text>
+                  </Form.Group>
+                )}
+
+                {!requiresLink && (
+                  <Form.Group className="mb-3">
+                    <Form.Label>Посилання (опціонально)</Form.Label>
+                    <Form.Control
+                      type="url"
+                      name="link"
+                      value={formData.link}
+                      onChange={handleChange}
+                      placeholder="https://..."
+                    />
+                  </Form.Group>
+                )}
 
                 <Form.Group className="mb-3">
                   <Form.Label>Опис *</Form.Label>
@@ -143,7 +206,7 @@ function IdeaEditPage() {
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
-                    placeholder="Детально опишіть вашу ідею..."
+                    placeholder="Детально опишіть..."
                     required
                   />
                 </Form.Group>
@@ -200,7 +263,7 @@ function IdeaEditPage() {
                     name="is_public"
                     checked={formData.is_public}
                     onChange={handleChange}
-                    label="Публічна ідея (видима всім)"
+                    label="Публічний (видимий всім)"
                   />
                 </Form.Group>
 
@@ -218,7 +281,7 @@ function IdeaEditPage() {
                   <Button type="submit" variant="primary" disabled={saving}>
                     {saving ? 'Збереження...' : 'Зберегти зміни'}
                   </Button>
-                  <Button variant="outline-secondary" onClick={() => navigate(`/ideas/${slug}`)}>
+                  <Button variant="outline-secondary" onClick={() => navigate(`/contents/${slug}`)}>
                     Скасувати
                   </Button>
                 </div>
@@ -231,4 +294,4 @@ function IdeaEditPage() {
   );
 }
 
-export default IdeaEditPage;
+export default ContentEditPage;
